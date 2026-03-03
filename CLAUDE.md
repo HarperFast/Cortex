@@ -1,4 +1,4 @@
-# Harper Vector Memory System
+# Harper Cortex
 
 An agent-agnostic AI memory system using Harper Fabric as the vector database and MCP for AI agent connectivity.
 

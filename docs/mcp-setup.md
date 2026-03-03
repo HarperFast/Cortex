@@ -35,7 +35,7 @@ Add the Harper memory server:
 ```json
 {
   "mcpServers": {
-    "harper-memory": {
+    "harper-cortex": {
       "command": "npx",
       "args": [
         "-y",

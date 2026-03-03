@@ -1,4 +1,4 @@
-# Harper Vector Memory System
+# Harper Cortex
 
 A persistent, agent-agnostic AI memory system powered by [Harper Fabric](https://harper.fast). Clone, configure your API keys, deploy, and give all your AI tools a shared brain.
 
@@ -61,8 +61,8 @@ Create your free cluster at [fabric.harper.fast](https://fabric.harper.fast):
 ### 2. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/HarperVectorMemorySystem.git
-cd HarperVectorMemorySystem
+git clone https://github.com/YOUR_USERNAME/HarperCortex.git
+cd HarperCortex
 npm install -g harperdb   # Install the Harper runtime (one-time)
 npm install               # Install project dependencies
 ```
