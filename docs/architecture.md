@@ -3,39 +3,48 @@
 ## Data Flow
 
 ```
-┌───────────┐     Event POST     ┌──────────────────────┐
-│  Slack    │ ─────────────────▶ │  SlackWebhook        │
-│  Events   │                    │  (resources.js)       │
-│  API      │                    │                       │
-└───────────┘                    │  1. Verify signature  │
-                                 │  2. Filter bots/dupes │
-                                 │  3. Return 200        │
-                                 │  4. Async process:    │
-                                 │     ┌─────────────┐   │
-                                 │     │ classifyMsg  │   │
-                                 │     │ (Claude API) │   │
-                                 │     └──────┬──────┘   │
-                                 │     ┌──────▼──────┐   │
-                                 │     │ genEmbedding │   │
-                                 │     │ (Voyage AI)  │   │
-                                 │     └──────┬──────┘   │
-                                 │     ┌──────▼──────┐   │
-                                 │     │ Memory.put() │   │
-                                 │     └─────────────┘   │
-                                 └──────────────────────┘
-
-┌──────────────┐    MCP JSON-RPC    ┌──────────────────┐
-│ Claude       │ ◀────────────────▶ │ Harper MCP       │
-│ Desktop      │                    │ Server (/mcp)    │
-│ (or Cursor)  │                    │                  │
-└──────────────┘                    │ resources/list   │
-                                    │ resources/read   │
-                                    └────────┬─────────┘
-                                             │
-                                    ┌────────▼─────────┐
-                                    │ Memory Table     │
-                                    │ (HNSW index)     │
-                                    └──────────────────┘
+  INGESTION SOURCES                  INGESTION LAYER
+┌─────────────────┐
+│  Slack          │ ──▶ ┌─────────────────────────────────────┐
+│  Events API     │     │  Webhook Resource                   │
+└─────────────────┘     │  (e.g. SlackWebhook)                │
+                        │                                     │
+┌─────────────────┐     │  1. Verify signature                │
+│  GitHub         │ ──▶ │  2. Filter bots/dupes               │
+│  Webhooks       │     │  3. Return 200 immediately          │
+└─────────────────┘     │  4. Async process:                  │
+                        │                                     │
+┌─────────────────┐     │     ┌─────────────────────────┐    │
+│  Linear         │ ──▶ │     │ classifyMsg (Claude API) │    │
+│  Webhooks       │     │     └────────────┬────────────┘    │
+└─────────────────┘     │     ┌────────────▼────────────┐    │
+                        │     │ genEmbedding (Voyage AI) │    │
+┌─────────────────┐     │     └────────────┬────────────┘    │
+│  Other Sources  │ ──▶ │     ┌────────────▼────────────┐    │
+│  (Discord, etc) │     │     │      Memory.put()        │    │
+└─────────────────┘     │     └─────────────────────────┘    │
+                        └──────────────────┬──────────────────┘
+                                           │
+                                  ┌────────▼─────────┐
+                                  │   Memory Table   │
+                                  │   (HNSW index)   │
+                                  └────────┬─────────┘
+                                           │
+                                  ┌──────────────────┐
+  QUERY LAYER                    │  Harper MCP      │
+                                 │  Server (/mcp)   │
+┌─────────────────┐              │                  │
+│  Claude Desktop │ ◀──────────▶ │  resources/list  │
+└─────────────────┘              │  resources/read  │
+                     MCP         │                  │
+┌─────────────────┐  JSON-RPC    │                  │
+│  Cursor         │ ◀──────────▶ │                  │
+└─────────────────┘              │                  │
+                                 │                  │
+┌─────────────────┐              │                  │
+│  Other MCP      │ ◀──────────▶ │                  │
+│  Clients        │              └──────────────────┘
+└─────────────────┘
 ```
 
 ## Memory Table Schema
