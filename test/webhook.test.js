@@ -1,0 +1,174 @@
+import { describe, it, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
+
+class MockMemory {
+	static put = mock.fn();
+	static search = mock.fn(function* () {});
+	static get = mock.fn();
+}
+
+mock.module('harperdb', {
+	namedExports: {
+		Resource: class Resource {},
+		tables: { Memory: MockMemory },
+	},
+});
+
+mock.module('@anthropic-ai/sdk', {
+	defaultExport: class Anthropic {
+		constructor() {
+			this.messages = {
+				create: mock.fn(async () => ({
+					content: [{
+						text: JSON.stringify({
+							category: 'discussion',
+							entities: { people: [], projects: [], technologies: [], topics: [], dates: [] },
+							summary: 'test',
+						}),
+					}],
+				})),
+			};
+		}
+	},
+});
+
+mock.module('voyageai', {
+	namedExports: {
+		VoyageAIClient: class VoyageAIClient {
+			constructor() {}
+			async embed() {
+				return { data: [{ embedding: new Array(1024).fill(0.1) }] };
+			}
+		},
+	},
+});
+
+process.env.ANTHROPIC_API_KEY = 'test-key';
+process.env.VOYAGE_API_KEY = 'test-key';
+
+const { verifySlackSignature, SlackWebhook } = await import('../resources.js');
+
+describe('verifySlackSignature', () => {
+	const signingSecret = 'test_signing_secret_12345';
+
+	function createValidSignature(body, timestamp) {
+		const sigBasestring = `v0:${timestamp}:${body}`;
+		return 'v0=' + createHmac('sha256', signingSecret).update(sigBasestring).digest('hex');
+	}
+
+	it('returns true for a valid signature', () => {
+		const timestamp = Math.floor(Date.now() / 1000).toString();
+		const body = '{"type":"event_callback"}';
+		const signature = createValidSignature(body, timestamp);
+
+		assert.equal(verifySlackSignature(signingSecret, signature, timestamp, body), true);
+	});
+
+	it('returns false for an invalid signature', () => {
+		const timestamp = Math.floor(Date.now() / 1000).toString();
+		const body = '{"type":"event_callback"}';
+
+		assert.equal(verifySlackSignature(signingSecret, 'v0=invalid', timestamp, body), false);
+	});
+
+	it('returns false for an expired timestamp (replay attack)', () => {
+		const oldTimestamp = (Math.floor(Date.now() / 1000) - 600).toString();
+		const body = '{"type":"event_callback"}';
+		const signature = createValidSignature(body, oldTimestamp);
+
+		assert.equal(verifySlackSignature(signingSecret, signature, oldTimestamp, body), false);
+	});
+
+	it('returns false for missing parameters', () => {
+		assert.equal(verifySlackSignature(null, 'sig', '123', 'body'), false);
+		assert.equal(verifySlackSignature(signingSecret, null, '123', 'body'), false);
+		assert.equal(verifySlackSignature(signingSecret, 'sig', null, 'body'), false);
+		assert.equal(verifySlackSignature(signingSecret, 'sig', '123', null), false);
+	});
+
+	it('returns false for tampered body', () => {
+		const timestamp = Math.floor(Date.now() / 1000).toString();
+		const originalBody = '{"type":"event_callback"}';
+		const signature = createValidSignature(originalBody, timestamp);
+
+		assert.equal(verifySlackSignature(signingSecret, signature, timestamp, '{"type":"tampered"}'), false);
+	});
+});
+
+describe('SlackWebhook', () => {
+	it('handles URL verification challenge', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'url_verification',
+			challenge: 'test_challenge_token',
+		});
+
+		assert.equal(result.challenge, 'test_challenge_token');
+	});
+
+	it('ignores non-event_callback types', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({ type: 'app_rate_limited' });
+
+		assert.equal(result.message, 'ignored');
+	});
+
+	it('skips bot messages', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'event_callback',
+			event: { type: 'message', bot_id: 'B123', text: 'bot message', ts: '123.456' },
+		});
+
+		assert.equal(result.message, 'skipped');
+	});
+
+	it('skips message subtypes (joins, leaves, etc)', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'event_callback',
+			event: { type: 'message', subtype: 'channel_join', text: 'joined', ts: '123.456' },
+		});
+
+		assert.equal(result.message, 'skipped');
+	});
+
+	it('skips empty messages', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'event_callback',
+			event: { type: 'message', text: '', user: 'U123', ts: '123.456' },
+		});
+
+		assert.equal(result.message, 'empty');
+	});
+
+	it('accepts valid human messages for async processing', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'event_callback',
+			event_id: 'Ev123',
+			team_id: 'T123',
+			event: {
+				type: 'message',
+				text: 'Let us switch to Redis for caching',
+				user: 'U456',
+				channel: 'C789',
+				ts: '1234567890.123456',
+			},
+		});
+
+		assert.equal(result.message, 'accepted');
+		assert.equal(result.status, 200);
+	});
+
+	it('handles missing event payload gracefully', async () => {
+		const webhook = new SlackWebhook();
+		const result = await webhook.post({
+			type: 'event_callback',
+		});
+
+		assert.equal(result.message, 'no_event');
+	});
+});
