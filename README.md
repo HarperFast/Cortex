@@ -198,6 +198,60 @@ Tests use Node.js built-in test runner with module mocking. No extra test depend
 4. **Storage**: Raw text, classification, entities, and embedding are stored in the Memory table with HNSW vector indexing
 5. **Retrieval**: Any MCP-connected AI client queries the Memory table using hybrid search (vector similarity + attribute filters)
 
+## Supported Integrations
+
+This repo ships with Slack + Anthropic + Voyage AI as the default stack. The architecture is designed to be swappable - add a new webhook resource class for any ingestion source, or change the LLM/embedding provider in `resources.js`.
+
+### Ingestion Sources
+
+The system ingests data via webhooks. Add new sources by creating a new Resource class following the same pattern as `SlackWebhook`.
+
+| Platform | Webhook Support | Good For |
+|----------|----------------|----------|
+| **Slack** | Events API | Team conversations, decisions, standups (included) |
+| **GitHub** | Webhooks | Issues, PRs, code reviews, commit messages |
+| **Linear** | Webhooks | Task tracking, sprint decisions, bug reports |
+| **Jira** | Webhooks | Project management, issue tracking |
+| **Notion** | API polling | Wiki pages, meeting notes, documentation |
+| **Discord** | Gateway / Webhooks | Community discussions, support threads |
+| **Google Drive** | Push notifications | Shared docs, spreadsheets, presentations |
+| **Email** | Forwarding / SMTP webhook | Client communications, vendor threads |
+| **Microsoft Teams** | Webhooks | Enterprise team conversations |
+
+### Classification LLMs
+
+Swap the classification model by changing `CLASSIFICATION_MODEL` in `resources.js` and updating the SDK import.
+
+| Provider | Recommended Model | Trade-off |
+|----------|-------------------|-----------|
+| **Anthropic** | Claude Haiku 3.5 | Best structured JSON output (default) |
+| **OpenAI** | GPT-4o-mini | Cheapest, fast, good at JSON |
+| **Google** | Gemini 2.0 Flash | Generous free tier |
+| **Ollama** (local) | Llama 3 / Mistral | Full privacy, no API costs, requires local GPU |
+
+### Embedding Providers
+
+Swap the embedding provider by changing `generateEmbedding()` in `resources.js`. If you change the vector dimensions, re-embed all existing records.
+
+| Provider | Recommended Model | Dimensions | Trade-off |
+|----------|-------------------|------------|-----------|
+| **Voyage AI** | voyage-3 | 1024 | Anthropic-recommended (default) |
+| **OpenAI** | text-embedding-3-small | 1536 | Most widely adopted |
+| **Cohere** | embed-v4 | 1024 | Strong multilingual support |
+| **Ollama** (local) | nomic-embed-text | 768 | Full privacy, zero API cost |
+
+### MCP Clients (Retrieval)
+
+Any MCP-compliant AI client can connect to the Harper MCP Server and query your memory pool.
+
+| Client | Status |
+|--------|--------|
+| **Claude Desktop** | Fully supported (default) |
+| **Cursor** | Fully supported (same MCP config) |
+| **Windsurf** | MCP-compatible |
+| **Claude Code** (CLI) | MCP-compatible |
+| **Any MCP client** | Open standard - works with any compliant tool |
+
 ## License
 
 MIT

@@ -80,3 +80,12 @@ The `MemorySearch` endpoint combines two search strategies:
 2. **Attribute filtering**: Narrows results by classification, source, channel, or author
 
 This hybrid approach gives better results than pure vector search alone.
+
+## Extensibility
+
+The system is designed to be swappable at each layer:
+
+- **Ingestion**: Add new webhook Resource classes for any platform (GitHub, Linear, Notion, Discord, etc.) following the `SlackWebhook` pattern. Each source writes to the same `Memory` table with `source` set to the platform name.
+- **Classification LLM**: Swap `CLASSIFICATION_MODEL` and the SDK in `resources.js`. The classification prompt and JSON schema are provider-agnostic.
+- **Embedding provider**: Swap `generateEmbedding()`. If you change vector dimensions, all existing records must be re-embedded.
+- **MCP clients**: Any MCP-compliant tool connects to the same `/mcp` endpoint. No per-client configuration needed on the server side.
