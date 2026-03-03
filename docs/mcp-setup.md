@@ -14,10 +14,18 @@ This creates a `/mcp` endpoint on your cluster that exposes all tables (includin
 
 ## Step 2: Verify the MCP Endpoint
 
+Generate your Basic Auth token:
+
+```bash
+echo -n "YOUR_USERNAME:YOUR_PASSWORD" | base64
+```
+
+Then test the endpoint:
+
 ```bash
 curl https://YOUR_CLUSTER.harperfabric.com/mcp \
   -H "Content-Type: application/json" \
-  -H "Authorization: Basic YOUR_AUTH" \
+  -H "Authorization: Basic <base64_token>" \
   -d '{"jsonrpc": "2.0", "method": "resources/list", "id": 1}'
 ```
 
@@ -30,7 +38,7 @@ Edit the Claude Desktop configuration file:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
-Add the Harper memory server:
+### Option A: Basic Auth (username + password)
 
 ```json
 {
@@ -40,16 +48,45 @@ Add the Harper memory server:
       "args": [
         "-y",
         "mcp-remote",
-        "https://YOUR_CLUSTER.harperfabric.com/mcp"
+        "https://YOUR_CLUSTER.harperfabric.com/mcp",
+        "--header",
+        "Authorization: Basic <base64_token>"
       ]
     }
   }
 }
 ```
 
-> **Note**: `mcp-remote` bridges Harper's HTTP-based MCP endpoint to the stdio transport that Claude Desktop expects.
+### Option B: JWT Bearer Token (recommended for production)
 
-If your cluster requires authentication, consult the `mcp-remote` documentation for passing credentials.
+First, issue a JWT from your cluster:
+
+```bash
+curl -X POST https://YOUR_CLUSTER.harperfabric.com/IssueTokens \
+  -H "Content-Type: application/json" \
+  -d '{"username": "YOUR_USERNAME", "password": "YOUR_PASSWORD"}'
+```
+
+This returns `{ "jwt": "...", "refreshToken": "..." }`. Use the JWT in your config:
+
+```json
+{
+  "mcpServers": {
+    "harper-cortex": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://YOUR_CLUSTER.harperfabric.com/mcp",
+        "--header",
+        "Authorization: Bearer YOUR_JWT"
+      ]
+    }
+  }
+}
+```
+
+> **Note**: JWTs are short-lived. When one expires, re-issue via `POST /IssueTokens` with your `refreshToken`. `mcp-remote` bridges Harper's HTTP-based MCP endpoint to the stdio transport that Claude Desktop expects.
 
 ## Step 4: Restart Claude Desktop
 
@@ -76,6 +113,6 @@ The same MCP configuration works with Cursor:
 ## Troubleshooting
 
 - **MCP server not showing up**: Make sure you fully quit and restarted Claude Desktop
-- **Authentication errors**: Verify your cluster credentials are correct
+- **Authentication errors**: Verify your base64 token or JWT is correct and not expired
 - **No results**: Check that the Memory table has records (send a test Slack message first)
 - **Connection timeout**: Verify your cluster URL is correct and the cluster is running
