@@ -57,7 +57,7 @@ Create your free cluster at [fabric.harper.fast](https://fabric.harper.fast):
 ### 2. Clone and install
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/Harper-Cortex.git
+git clone https://github.com/HarperFast/Harper-Cortex.git
 cd Harper-Cortex
 npm install -g harperdb   # Install the Harper runtime (one-time)
 npm install               # Install project dependencies

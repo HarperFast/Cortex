@@ -5,6 +5,10 @@
   "type": "module",
   "main": "resources.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HarperFast/Harper-Cortex.git"
+  },
   "scripts": {
     "start": "harperdb run .",
     "dev": "harperdb dev .",
@@ -16,6 +20,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "voyageai": "^0.1.0"
+    "voyageai": "^0.2.1"
   }
 }
