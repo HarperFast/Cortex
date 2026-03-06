@@ -1,16 +1,22 @@
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
+	static get = mock.fn();
+}
+
+class MockSynapseEntry {
+	static put = mock.fn();
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
 mock.module('harperdb', {
 	namedExports: {
 		Resource: class Resource {},
-		tables: { Memory: MockMemory },
+		tables: { Memory: MockMemory, SynapseEntry: MockSynapseEntry },
 	},
 });
 
@@ -27,7 +33,9 @@ mock.module('voyageai', {
 	namedExports: {
 		VoyageAIClient: class VoyageAIClient {
 			constructor() {}
-			embed(...args) { return mockEmbed(...args); }
+			embed(...args) {
+				return mockEmbed(...args);
+			}
 		},
 	},
 });
@@ -54,28 +62,28 @@ describe('generateEmbedding', () => {
 	it('throws for empty string', async () => {
 		await assert.rejects(
 			() => generateEmbedding(''),
-			{ message: 'Cannot generate embedding for empty text' }
+			{ message: 'Cannot generate embedding for empty text' },
 		);
 	});
 
 	it('throws for null input', async () => {
 		await assert.rejects(
 			() => generateEmbedding(null),
-			{ message: 'Cannot generate embedding for empty text' }
+			{ message: 'Cannot generate embedding for empty text' },
 		);
 	});
 
 	it('throws for undefined input', async () => {
 		await assert.rejects(
 			() => generateEmbedding(undefined),
-			{ message: 'Cannot generate embedding for empty text' }
+			{ message: 'Cannot generate embedding for empty text' },
 		);
 	});
 
 	it('throws for whitespace-only input', async () => {
 		await assert.rejects(
 			() => generateEmbedding('   '),
-			{ message: 'Cannot generate embedding for empty text' }
+			{ message: 'Cannot generate embedding for empty text' },
 		);
 	});
 
@@ -86,7 +94,7 @@ describe('generateEmbedding', () => {
 
 		await assert.rejects(
 			() => generateEmbedding('valid text'),
-			{ message: 'Voyage API error' }
+			{ message: 'Voyage API error' },
 		);
 	});
 

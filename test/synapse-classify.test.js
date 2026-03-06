@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { beforeEach, describe, it, mock } from 'node:test';
 
-// Memory must be a class since resources.js extends it
 class MockMemory {
 	static put = mock.fn();
 	static search = mock.fn(function*() {});
@@ -44,9 +43,9 @@ mock.module('voyageai', {
 process.env.ANTHROPIC_API_KEY = 'test-key';
 process.env.VOYAGE_API_KEY = 'test-key';
 
-const { classifyMessage } = await import('../resources.js');
+const { classifySynapseEntry } = await import('../resources.js');
 
-describe('classifyMessage', () => {
+describe('classifySynapseEntry', () => {
 	beforeEach(() => {
 		mockCreate.mock.resetCalls();
 	});
@@ -55,48 +54,42 @@ describe('classifyMessage', () => {
 		mockCreate.mock.mockImplementation(async () => ({
 			content: [{
 				text: JSON.stringify({
-					category: 'decision',
+					type: 'intent',
 					entities: {
-						people: ['Alice'],
-						projects: ['Memory System'],
+						people: [],
+						projects: ['HarperCortex'],
 						technologies: ['HarperDB'],
 						topics: ['architecture'],
-						dates: [],
 					},
-					summary: 'Team decided to use HarperDB for the memory system.',
+					summary: 'Chose HarperDB for HNSW vector indexing.',
+					tags: ['database', 'vector'],
 				}),
 			}],
 		}));
 
-		const result = await classifyMessage('We decided to use HarperDB for the memory system');
+		const result = await classifySynapseEntry('We chose HarperDB for its HNSW vector indexing');
 
-		assert.equal(result.category, 'decision');
-		assert.ok(Array.isArray(result.entities.people));
+		assert.equal(result.type, 'intent');
 		assert.ok(Array.isArray(result.entities.technologies));
+		assert.ok(Array.isArray(result.tags));
 		assert.equal(typeof result.summary, 'string');
 	});
 
 	it('returns fallback classification for empty text', async () => {
-		const result = await classifyMessage('');
+		const result = await classifySynapseEntry('');
 
-		assert.equal(result.category, 'discussion');
-		assert.deepEqual(result.entities, {
-			people: [],
-			projects: [],
-			technologies: [],
-			topics: [],
-			dates: [],
-		});
+		assert.equal(result.type, 'intent');
+		assert.deepEqual(result.entities, { people: [], projects: [], technologies: [], topics: [] });
 	});
 
 	it('returns fallback classification for null text', async () => {
-		const result = await classifyMessage(null);
-		assert.equal(result.category, 'discussion');
+		const result = await classifySynapseEntry(null);
+		assert.equal(result.type, 'intent');
 	});
 
 	it('returns fallback classification for non-string text', async () => {
-		const result = await classifyMessage(42);
-		assert.equal(result.category, 'discussion');
+		const result = await classifySynapseEntry(42);
+		assert.equal(result.type, 'intent');
 	});
 
 	it('handles malformed JSON from LLM gracefully', async () => {
@@ -104,26 +97,27 @@ describe('classifyMessage', () => {
 			content: [{ text: 'this is not json' }],
 		}));
 
-		const result = await classifyMessage('some message');
+		const result = await classifySynapseEntry('some context entry');
 
-		assert.equal(result.category, 'discussion');
+		assert.equal(result.type, 'intent');
 		assert.ok(result.summary);
 	});
 
-	it('falls back when LLM returns an invalid category', async () => {
+	it('falls back when LLM returns an invalid type', async () => {
 		mockCreate.mock.mockImplementation(async () => ({
 			content: [{
 				text: JSON.stringify({
-					category: 'invalid_category',
-					entities: { people: [], projects: [], technologies: [], topics: [], dates: [] },
+					type: 'invalid_type',
+					entities: { people: [], projects: [], technologies: [], topics: [] },
 					summary: 'A summary',
+					tags: [],
 				}),
 			}],
 		}));
 
-		const result = await classifyMessage('some message');
+		const result = await classifySynapseEntry('some message');
 
-		assert.equal(result.category, 'discussion');
+		assert.equal(result.type, 'intent');
 		assert.equal(result.summary, 'A summary');
 	});
 
@@ -132,9 +126,27 @@ describe('classifyMessage', () => {
 			throw new Error('API rate limited');
 		});
 
-		const result = await classifyMessage('some message');
+		const result = await classifySynapseEntry('some context entry');
 
-		assert.equal(result.category, 'discussion');
+		assert.equal(result.type, 'intent');
 		assert.ok(result.summary);
+	});
+
+	it('accepts all four valid types', async () => {
+		const types = ['intent', 'constraint', 'artifact', 'history'];
+		for (const type of types) {
+			mockCreate.mock.mockImplementation(async () => ({
+				content: [{
+					text: JSON.stringify({
+						type,
+						entities: { people: [], projects: [], technologies: [], topics: [] },
+						summary: `A ${type} summary`,
+						tags: [],
+					}),
+				}],
+			}));
+			const result = await classifySynapseEntry('some text');
+			assert.equal(result.type, type);
+		}
 	});
 });

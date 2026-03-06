@@ -1,0 +1,16 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"ignorePatterns": [
+		"node_modules/"
+	],
+	"rules": {},
+	"overrides": [
+		{
+			"files": ["test/**"],
+			"rules": {
+				"unicorn/no-new-array": "off",
+				"require-yield": "off"
+			}
+		}
+	]
+}

@@ -42,18 +42,18 @@ Edit the Claude Desktop configuration file:
 
 ```json
 {
-  "mcpServers": {
-    "harper-cortex": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://YOUR_CLUSTER.harperfabric.com/mcp",
-        "--header",
-        "Authorization: Basic <base64_token>"
-      ]
-    }
-  }
+	"mcpServers": {
+		"harper-cortex": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"mcp-remote",
+				"https://YOUR_CLUSTER.harperfabric.com/mcp",
+				"--header",
+				"Authorization: Basic <base64_token>"
+			]
+		}
+	}
 }
 ```
 
@@ -71,18 +71,18 @@ This returns `{ "jwt": "...", "refreshToken": "..." }`. Use the JWT in your conf
 
 ```json
 {
-  "mcpServers": {
-    "harper-cortex": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "https://YOUR_CLUSTER.harperfabric.com/mcp",
-        "--header",
-        "Authorization: Bearer YOUR_JWT"
-      ]
-    }
-  }
+	"mcpServers": {
+		"harper-cortex": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"mcp-remote",
+				"https://YOUR_CLUSTER.harperfabric.com/mcp",
+				"--header",
+				"Authorization: Bearer YOUR_JWT"
+			]
+		}
+	}
 }
 ```
 

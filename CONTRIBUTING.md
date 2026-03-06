@@ -57,12 +57,12 @@ npm test
 
 Tests live in `test/` alongside the code they cover:
 
-| File | Covers |
-|------|--------|
-| `classify.test.js` | `classifyMessage()` |
-| `embedding.test.js` | `generateEmbedding()` |
-| `webhook.test.js` | `SlackWebhook`, `verifySlackSignature()` |
-| `search.test.js` | `MemorySearch` |
+| File                | Covers                                   |
+| ------------------- | ---------------------------------------- |
+| `classify.test.js`  | `classifyMessage()`                      |
+| `embedding.test.js` | `generateEmbedding()`                    |
+| `webhook.test.js`   | `SlackWebhook`, `verifySlackSignature()` |
+| `search.test.js`    | `MemorySearch`                           |
 
 ## Submitting a Pull Request
 
@@ -76,6 +76,7 @@ Please keep PRs focused — one feature or fix per PR.
 ## Reporting Issues
 
 Open an issue on GitHub with:
+
 - A clear description of the problem
 - Steps to reproduce
 - Your Node.js version (`node --version`)
