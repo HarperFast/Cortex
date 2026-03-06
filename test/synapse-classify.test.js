@@ -1,15 +1,15 @@
-import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
 class MockSynapseEntry {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 

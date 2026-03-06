@@ -1,7 +1,7 @@
-import { Resource, tables } from 'harperdb';
 import Anthropic from '@anthropic-ai/sdk';
-import { VoyageAIClient } from 'voyageai';
+import { Resource, tables } from 'harperdb';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { VoyageAIClient } from 'voyageai';
 
 const { Memory } = tables;
 const { SynapseEntry: SynapseEntryBase } = tables;
@@ -39,7 +39,7 @@ function getVoyageClient() {
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
 
 function log(level, message, context = {}) {
-	if (LOG_LEVELS[level] == null) return;
+	if (LOG_LEVELS[level] == null) { return; }
 	const entry = {
 		timestamp: new Date().toISOString(),
 		level,
@@ -76,7 +76,8 @@ const VALID_CATEGORIES = new Set([
 	'feedback',
 ]);
 
-const CLASSIFICATION_SYSTEM_PROMPT = `You are a message classifier for a team memory system. Classify each message into exactly ONE category and extract key entities.
+const CLASSIFICATION_SYSTEM_PROMPT =
+	`You are a message classifier for a team memory system. Classify each message into exactly ONE category and extract key entities.
 
 Categories: decision, action_item, knowledge, question, announcement, discussion, reference, status_update, feedback
 
@@ -227,12 +228,13 @@ export class SlackWebhook extends Resource {
 
 		// Return 200 immediately and process async to avoid Slack's 3s timeout
 		const eventData = { ...data };
-		setTimeout(() => this._processMessage(eventData).catch((err) => {
-			log('error', 'Async message processing failed', {
-				error: err.message,
-				eventId: eventData.event_id,
-			});
-		}), 0);
+		setTimeout(() =>
+			this._processMessage(eventData).catch((err) => {
+				log('error', 'Async message processing failed', {
+					error: err.message,
+					eventId: eventData.event_id,
+				});
+			}), 0);
 
 		return { status: 200, message: 'accepted' };
 	}
@@ -248,10 +250,12 @@ export class SlackWebhook extends Resource {
 
 		// Check for duplicate event_id to prevent re-processing
 		const existingMemories = [];
-		for await (const record of Memory.search({
-			conditions: { attribute: 'metadata', value: data.event_id },
-			limit: 1,
-		})) {
+		for await (
+			const record of Memory.search({
+				conditions: { attribute: 'metadata', value: data.event_id },
+				limit: 1,
+			})
+		) {
 			existingMemories.push(record);
 		}
 		if (existingMemories.length > 0) {
@@ -311,7 +315,7 @@ export class MemorySearch extends Resource {
 
 		const searchLimit = Math.min(
 			Math.max(1, parseInt(limit, 10) || DEFAULT_SEARCH_LIMIT),
-			MAX_SEARCH_LIMIT
+			MAX_SEARCH_LIMIT,
 		);
 
 		log('info', 'Memory search requested', { query, limit: searchLimit, filters });
@@ -320,9 +324,20 @@ export class MemorySearch extends Resource {
 
 		const searchParams = {
 			select: [
-				'id', 'rawText', 'source', 'sourceType', 'channelId', 'channelName',
-				'authorId', 'authorName', 'classification', 'entities', 'summary',
-				'timestamp', 'threadTs', '$distance',
+				'id',
+				'rawText',
+				'source',
+				'sourceType',
+				'channelId',
+				'channelName',
+				'authorId',
+				'authorName',
+				'classification',
+				'entities',
+				'summary',
+				'timestamp',
+				'threadTs',
+				'$distance',
 			],
 			sort: {
 				attribute: 'embedding',
@@ -372,7 +387,7 @@ export class MemoryTable extends Memory {
 	get(target) {
 		const record = super.get(target);
 		if (record && typeof record === 'object') {
-			const { embedding, ...rest } = record;
+			const { embedding: _, ...rest } = record;
 			return rest;
 		}
 		return record;
@@ -390,7 +405,8 @@ export class MemoryTable extends Memory {
 const VALID_SYNAPSE_TYPES = new Set(['intent', 'constraint', 'artifact', 'history']);
 const VALID_SYNAPSE_SOURCES = new Set(['claude_code', 'cursor', 'windsurf', 'copilot', 'manual', 'slack']);
 
-const SYNAPSE_CLASSIFICATION_PROMPT = `You are a context classifier for a software development memory system called Synapse. Given a piece of development context, classify it into exactly ONE type and extract metadata.
+const SYNAPSE_CLASSIFICATION_PROMPT =
+	`You are a context classifier for a software development memory system called Synapse. Given a piece of development context, classify it into exactly ONE type and extract metadata.
 
 Types:
 - intent: The high-level "Why" behind a decision. Architectural choices, technology selections, design rationale, trade-off reasoning.
@@ -483,7 +499,7 @@ const synapseparsers = {
 			const lines = section.split('\n');
 			const heading = lines[0].trim();
 			const body = lines.slice(1).join('\n').trim();
-			if (!body) return null;
+			if (!body) { return null; }
 			return {
 				content: `## ${heading}\n\n${body}`,
 				sourceFormat: 'markdown',
@@ -524,7 +540,7 @@ const synapseparsers = {
 			const lines = section.split('\n');
 			const heading = lines[0].trim();
 			const body = lines.slice(1).join('\n').trim();
-			if (!body) return null;
+			if (!body) { return null; }
 			return {
 				content: `## ${heading}\n\n${body}`,
 				sourceFormat: 'markdown',
@@ -548,7 +564,7 @@ const synapseparsers = {
 function groupByType(entries) {
 	const grouped = {};
 	for (const entry of entries) {
-		if (!grouped[entry.type]) grouped[entry.type] = [];
+		if (!grouped[entry.type]) { grouped[entry.type] = []; }
 		grouped[entry.type].push(entry);
 	}
 	return grouped;
@@ -598,7 +614,7 @@ const synapseEmitters = {
 	/**
 	 * Emit as Cursor .mdc rule files — one file per entry with YAML frontmatter.
 	 */
-	emitCursor(entries, projectId) {
+	emitCursor(entries, _projectId) {
 		const files = [];
 		for (const entry of entries) {
 			const globs = entry.metadata?.frontmatter?.globs || '';
@@ -620,7 +636,7 @@ const synapseEmitters = {
 	/**
 	 * Emit as Windsurf .md rule files — one file per entry.
 	 */
-	emitWindsurf(entries, projectId) {
+	emitWindsurf(entries, _projectId) {
 		const files = [];
 		for (const entry of entries) {
 			const md = `# Synapse: ${entry.summary}\n\n${entry.content}\n`;
@@ -653,7 +669,7 @@ export class SynapseEntry extends SynapseEntryBase {
 	get(target) {
 		const record = super.get(target);
 		if (record && typeof record === 'object') {
-			const { embedding, ...rest } = record;
+			const { embedding: _, ...rest } = record;
 			return rest;
 		}
 		return record;
@@ -677,7 +693,7 @@ export class SynapseSearch extends Resource {
 
 		const searchLimit = Math.min(
 			Math.max(1, parseInt(limit, 10) || DEFAULT_SEARCH_LIMIT),
-			MAX_SEARCH_LIMIT
+			MAX_SEARCH_LIMIT,
 		);
 
 		log('info', 'Synapse search requested', { query, projectId, limit: searchLimit, filters });
@@ -700,9 +716,21 @@ export class SynapseSearch extends Resource {
 
 		const searchParams = {
 			select: [
-				'id', 'projectId', 'type', 'content', 'source', 'sourceFormat',
-				'summary', 'status', 'references', 'tags', 'entities',
-				'parentId', 'createdAt', 'updatedAt', '$distance',
+				'id',
+				'projectId',
+				'type',
+				'content',
+				'source',
+				'sourceFormat',
+				'summary',
+				'status',
+				'references',
+				'tags',
+				'entities',
+				'parentId',
+				'createdAt',
+				'updatedAt',
+				'$distance',
 			],
 			sort: { attribute: 'embedding', target: queryEmbedding },
 			conditions,
@@ -780,11 +808,16 @@ export class SynapseIngest extends Resource {
 
 	_parseContent(source, content) {
 		switch (source) {
-			case 'claude_code': return synapseparsers.parseClaudeCode(content);
-			case 'cursor':      return synapseparsers.parseCursor(content);
-			case 'windsurf':    return synapseparsers.parseWindsurf(content);
-			case 'copilot':     return synapseparsers.parseCopilot(content);
-			default:            return [{ content, sourceFormat: 'markdown', metadata: {} }];
+			case 'claude_code':
+				return synapseparsers.parseClaudeCode(content);
+			case 'cursor':
+				return synapseparsers.parseCursor(content);
+			case 'windsurf':
+				return synapseparsers.parseWindsurf(content);
+			case 'copilot':
+				return synapseparsers.parseCopilot(content);
+			default:
+				return [{ content, sourceFormat: 'markdown', metadata: {} }];
 		}
 	}
 }
@@ -806,7 +839,7 @@ export class SynapseEmit extends Resource {
 
 		const emitLimit = Math.min(
 			Math.max(1, parseInt(limit, 10) || 50),
-			MAX_SEARCH_LIMIT
+			MAX_SEARCH_LIMIT,
 		);
 
 		log('info', 'Synapse emit requested', { target, projectId });
@@ -817,14 +850,25 @@ export class SynapseEmit extends Resource {
 		];
 
 		const entries = [];
-		for await (const record of SynapseEntryBase.search({
-			select: [
-				'id', 'type', 'content', 'summary', 'status',
-				'tags', 'entities', 'parentId', 'createdAt', 'updatedAt', 'metadata',
-			],
-			conditions,
-			limit: emitLimit,
-		})) {
+		for await (
+			const record of SynapseEntryBase.search({
+				select: [
+					'id',
+					'type',
+					'content',
+					'summary',
+					'status',
+					'tags',
+					'entities',
+					'parentId',
+					'createdAt',
+					'updatedAt',
+					'metadata',
+				],
+				conditions,
+				limit: emitLimit,
+			})
+		) {
 			if (!types || types.includes(record.type)) {
 				entries.push(record);
 			}
@@ -836,11 +880,16 @@ export class SynapseEmit extends Resource {
 
 	_emitForTarget(target, entries, projectId) {
 		switch (target) {
-			case 'claude_code': return synapseEmitters.emitClaudeCode(entries, projectId);
-			case 'cursor':      return synapseEmitters.emitCursor(entries, projectId);
-			case 'windsurf':    return synapseEmitters.emitWindsurf(entries, projectId);
-			case 'copilot':     return synapseEmitters.emitCopilot(entries, projectId);
-			default:            return synapseEmitters.emitMarkdown(entries, projectId);
+			case 'claude_code':
+				return synapseEmitters.emitClaudeCode(entries, projectId);
+			case 'cursor':
+				return synapseEmitters.emitCursor(entries, projectId);
+			case 'windsurf':
+				return synapseEmitters.emitWindsurf(entries, projectId);
+			case 'copilot':
+				return synapseEmitters.emitCopilot(entries, projectId);
+			default:
+				return synapseEmitters.emitMarkdown(entries, projectId);
 		}
 	}
 }

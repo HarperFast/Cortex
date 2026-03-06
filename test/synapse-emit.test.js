@@ -1,13 +1,13 @@
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
-const mockSynapseSearch = mock.fn(function* () {});
+const mockSynapseSearch = mock.fn(function*() {});
 
 class MockSynapseEntry {
 	static put = mock.fn();
@@ -84,7 +84,7 @@ describe('SynapseEmit', () => {
 
 	it('queries only active entries for the project', async () => {
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -101,8 +101,8 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits claude_code format as markdown string', async () => {
-		mockSynapseSearch.mock.mockImplementation(function* () {
-			for (const e of fakeEntries) yield e;
+		mockSynapseSearch.mock.mockImplementation(function*() {
+			for (const e of fakeEntries) { yield e; }
 		});
 
 		const emit = new SynapseEmit();
@@ -116,8 +116,8 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits cursor format as object with .mdc files', async () => {
-		mockSynapseSearch.mock.mockImplementation(function* () {
-			for (const e of fakeEntries) yield e;
+		mockSynapseSearch.mock.mockImplementation(function*() {
+			for (const e of fakeEntries) { yield e; }
 		});
 
 		const emit = new SynapseEmit();
@@ -131,8 +131,8 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits windsurf format as object with .md files', async () => {
-		mockSynapseSearch.mock.mockImplementation(function* () {
-			for (const e of fakeEntries) yield e;
+		mockSynapseSearch.mock.mockImplementation(function*() {
+			for (const e of fakeEntries) { yield e; }
 		});
 
 		const emit = new SynapseEmit();
@@ -145,8 +145,8 @@ describe('SynapseEmit', () => {
 	});
 
 	it('filters entries by types param', async () => {
-		mockSynapseSearch.mock.mockImplementation(function* () {
-			for (const e of fakeEntries) yield e;
+		mockSynapseSearch.mock.mockImplementation(function*() {
+			for (const e of fakeEntries) { yield e; }
 		});
 
 		const emit = new SynapseEmit();
@@ -156,7 +156,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('returns entryCount of 0 when no entries exist', async () => {
-		mockSynapseSearch.mock.mockImplementation(function* () {});
+		mockSynapseSearch.mock.mockImplementation(function*() {});
 
 		const emit = new SynapseEmit();
 		const result = await emit.post({ target: 'claude_code', projectId: 'empty-project' });

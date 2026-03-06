@@ -1,13 +1,13 @@
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
-const mockSynapseSearch = mock.fn(function* () {});
+const mockSynapseSearch = mock.fn(function*() {});
 
 class MockSynapseEntry {
 	static put = mock.fn();
@@ -35,7 +35,9 @@ mock.module('voyageai', {
 	namedExports: {
 		VoyageAIClient: class VoyageAIClient {
 			constructor() {}
-			embed(...args) { return mockEmbed(...args); }
+			embed(...args) {
+				return mockEmbed(...args);
+			}
 		},
 	},
 });
@@ -90,7 +92,7 @@ describe('SynapseSearch', () => {
 			$distance: 0.12,
 		};
 
-		mockSynapseSearch.mock.mockImplementation(function* () {
+		mockSynapseSearch.mock.mockImplementation(function*() {
 			yield fakeResult;
 		});
 
@@ -109,7 +111,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -131,7 +133,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -147,7 +149,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -163,7 +165,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -181,7 +183,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -198,7 +200,7 @@ describe('SynapseSearch', () => {
 		}));
 
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function* (params) {
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 

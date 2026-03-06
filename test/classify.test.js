@@ -1,16 +1,16 @@
-import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 // Memory must be a class since resources.js extends it
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
 class MockSynapseEntry {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
@@ -81,7 +81,11 @@ describe('classifyMessage', () => {
 
 		assert.equal(result.category, 'discussion');
 		assert.deepEqual(result.entities, {
-			people: [], projects: [], technologies: [], topics: [], dates: [],
+			people: [],
+			projects: [],
+			technologies: [],
+			topics: [],
+			dates: [],
 		});
 	});
 

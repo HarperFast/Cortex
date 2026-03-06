@@ -1,9 +1,9 @@
-import { describe, it, mock, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
@@ -11,7 +11,7 @@ const mockSynapsePut = mock.fn();
 
 class MockSynapseEntry {
 	static put = mockSynapsePut;
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
@@ -36,7 +36,9 @@ mock.module('voyageai', {
 	namedExports: {
 		VoyageAIClient: class VoyageAIClient {
 			constructor() {}
-			embed(...args) { return mockEmbed(...args); }
+			embed(...args) {
+				return mockEmbed(...args);
+			}
 		},
 	},
 });
@@ -155,7 +157,8 @@ describe('SynapseIngest', () => {
 		});
 
 		it('parseCursor extracts frontmatter and body as mdc format', async () => {
-			const mdc = `---\ndescription: Use TypeScript everywhere\nglobs: **/*.ts\n---\n\nAlways prefer TypeScript over JavaScript.`;
+			const mdc =
+				`---\ndescription: Use TypeScript everywhere\nglobs: **/*.ts\n---\n\nAlways prefer TypeScript over JavaScript.`;
 			const ingest = new SynapseIngest();
 			const result = await ingest.post({
 				source: 'cursor',

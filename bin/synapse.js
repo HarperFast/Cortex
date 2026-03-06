@@ -15,7 +15,7 @@
  *   SYNAPSE_AUTH       Authorization header value (e.g. "Basic dXNlcjpwYXNz")
  */
 
-import { readFileSync, existsSync, writeFileSync, mkdirSync, readdirSync, watch } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, watch, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -23,8 +23,8 @@ import { join } from 'node:path';
 // ---------------------------------------------------------------------------
 
 const ENDPOINT = process.env.SYNAPSE_ENDPOINT || 'http://localhost:9926';
-const PROJECT  = process.env.SYNAPSE_PROJECT;
-const AUTH     = process.env.SYNAPSE_AUTH;
+const PROJECT = process.env.SYNAPSE_PROJECT;
+const AUTH = process.env.SYNAPSE_AUTH;
 
 function requireProject() {
 	if (!PROJECT) {
@@ -35,7 +35,7 @@ function requireProject() {
 
 function getHeaders() {
 	const headers = { 'Content-Type': 'application/json' };
-	if (AUTH) headers['Authorization'] = AUTH;
+	if (AUTH) { headers['Authorization'] = AUTH; }
 	return headers;
 }
 
@@ -57,7 +57,7 @@ async function apiPost(path, body) {
 // ---------------------------------------------------------------------------
 
 function listFilesWithExt(dir, ext, source) {
-	if (!existsSync(dir)) return [];
+	if (!existsSync(dir)) { return []; }
 	const results = [];
 	try {
 		const entries = readdirSync(dir, { withFileTypes: true });
@@ -77,14 +77,16 @@ function discoverContextFiles(cwd) {
 	const files = [];
 
 	// Single-file candidates
-	for (const { rel, source } of [
-		{ rel: 'CLAUDE.md',                       source: 'claude_code' },
-		{ rel: 'claude.md',                       source: 'claude_code' },
-		{ rel: 'copilot-instructions.md',         source: 'copilot' },
-		{ rel: '.github/copilot-instructions.md', source: 'copilot' },
-	]) {
+	for (
+		const { rel, source } of [
+			{ rel: 'CLAUDE.md', source: 'claude_code' },
+			{ rel: 'claude.md', source: 'claude_code' },
+			{ rel: 'copilot-instructions.md', source: 'copilot' },
+			{ rel: '.github/copilot-instructions.md', source: 'copilot' },
+		]
+	) {
 		const full = join(cwd, rel);
-		if (existsSync(full)) files.push({ filePath: full, source });
+		if (existsSync(full)) { files.push({ filePath: full, source }); }
 	}
 
 	// .cursor/rules/*.mdc
@@ -92,7 +94,7 @@ function discoverContextFiles(cwd) {
 
 	// .windsurf/rules/*.md or .windsurf/*.md
 	const wsRules = join(cwd, '.windsurf', 'rules');
-	const wsRoot  = join(cwd, '.windsurf');
+	const wsRoot = join(cwd, '.windsurf');
 	files.push(...listFilesWithExt(existsSync(wsRules) ? wsRules : wsRoot, '.md', 'windsurf'));
 
 	return files;
@@ -108,7 +110,9 @@ async function cmdSync() {
 	const files = discoverContextFiles(cwd);
 
 	if (files.length === 0) {
-		console.log('No context files found. Looked for CLAUDE.md, .cursor/rules/*.mdc, .windsurf/rules/*.md, copilot-instructions.md');
+		console.log(
+			'No context files found. Looked for CLAUDE.md, .cursor/rules/*.mdc, .windsurf/rules/*.md, copilot-instructions.md',
+		);
 		return;
 	}
 
@@ -144,11 +148,11 @@ async function cmdEmit(args) {
 	requireProject();
 
 	const targetIdx = args.indexOf('--target');
-	const target    = targetIdx !== -1 ? args[targetIdx + 1] : 'claude_code';
+	const target = targetIdx !== -1 ? args[targetIdx + 1] : 'claude_code';
 	const shouldWrite = args.includes('--write');
 
 	const typesIdx = args.indexOf('--types');
-	const types    = typesIdx !== -1 ? args[typesIdx + 1]?.split(',') : undefined;
+	const types = typesIdx !== -1 ? args[typesIdx + 1]?.split(',') : undefined;
 
 	const result = await apiPost('/SynapseEmit', { target, projectId: PROJECT, types });
 
@@ -192,7 +196,10 @@ async function cmdSearch(args) {
 	// Collect positional args (skip --flag value pairs)
 	const queryParts = [];
 	for (let i = 0; i < args.length; i++) {
-		if (args[i].startsWith('--')) { i++; continue; }
+		if (args[i].startsWith('--')) {
+			i++;
+			continue;
+		}
 		queryParts.push(args[i]);
 	}
 	const query = queryParts.join(' ');
@@ -203,7 +210,7 @@ async function cmdSearch(args) {
 	}
 
 	const limitIdx = args.indexOf('--limit');
-	const limit    = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 10;
+	const limit = limitIdx !== -1 ? parseInt(args[limitIdx + 1], 10) : 10;
 
 	const typeIdx = args.indexOf('--type');
 	const filters = typeIdx !== -1 ? { type: args[typeIdx + 1] } : {};
@@ -248,11 +255,11 @@ async function cmdStatus() {
 		process.exit(1);
 	}
 
-	const typeCounts   = { intent: 0, constraint: 0, artifact: 0, history: 0 };
+	const typeCounts = { intent: 0, constraint: 0, artifact: 0, history: 0 };
 	const sourceCounts = {};
 
 	for (const r of result.results) {
-		if (typeCounts[r.type] !== undefined) typeCounts[r.type]++;
+		if (typeCounts[r.type] !== undefined) { typeCounts[r.type]++; }
 		sourceCounts[r.source] = (sourceCounts[r.source] || 0) + 1;
 	}
 
@@ -280,7 +287,7 @@ async function cmdStatus() {
 
 async function cmdWatch() {
 	requireProject();
-	const cwd   = process.cwd();
+	const cwd = process.cwd();
 	const files = discoverContextFiles(cwd);
 
 	if (files.length === 0) {
@@ -299,23 +306,26 @@ async function cmdWatch() {
 	for (const { filePath, source } of files) {
 		watch(filePath, () => {
 			clearTimeout(timers.get(filePath));
-			timers.set(filePath, setTimeout(async () => {
-				timers.delete(filePath);
-				const rel = filePath.replace(cwd + '/', '');
-				try {
-					const content = readFileSync(filePath, 'utf8');
-					process.stdout.write(`  Changed: ${rel}... `);
-					const result = await apiPost('/SynapseIngest', { source, content, projectId: PROJECT });
-					if (result.error) {
-						console.log(`✗ ${result.error}`);
-					} else {
-						const n = result.count;
-						console.log(`✓ ${n} entr${n === 1 ? 'y' : 'ies'} synced`);
+			timers.set(
+				filePath,
+				setTimeout(async () => {
+					timers.delete(filePath);
+					const rel = filePath.replace(cwd + '/', '');
+					try {
+						const content = readFileSync(filePath, 'utf8');
+						process.stdout.write(`  Changed: ${rel}... `);
+						const result = await apiPost('/SynapseIngest', { source, content, projectId: PROJECT });
+						if (result.error) {
+							console.log(`✗ ${result.error}`);
+						} else {
+							const n = result.count;
+							console.log(`✓ ${n} entr${n === 1 ? 'y' : 'ies'} synced`);
+						}
+					} catch (err) {
+						console.log(`✗ ${err.message}`);
 					}
-				} catch (err) {
-					console.log(`✗ ${err.message}`);
-				}
-			}, 2000));
+				}, 2000),
+			);
 		});
 	}
 }
@@ -368,20 +378,30 @@ const [, , cmd, ...rest] = process.argv;
 
 try {
 	switch (cmd) {
-		case 'sync':   await cmdSync();         break;
-		case 'emit':   await cmdEmit(rest);     break;
-		case 'search': await cmdSearch(rest);   break;
-		case 'watch':  await cmdWatch();        break;
-		case 'status': await cmdStatus();       break;
+		case 'sync':
+			await cmdSync();
+			break;
+		case 'emit':
+			await cmdEmit(rest);
+			break;
+		case 'search':
+			await cmdSearch(rest);
+			break;
+		case 'watch':
+			await cmdWatch();
+			break;
+		case 'status':
+			await cmdStatus();
+			break;
 		case 'help':
 		case '--help':
 		case '-h':
 			printHelp();
 			break;
 		default:
-			if (cmd) console.error(`Unknown command: ${cmd}\n`);
+			if (cmd) { console.error(`Unknown command: ${cmd}\n`); }
 			printHelp();
-			if (cmd) process.exit(1);
+			if (cmd) { process.exit(1); }
 	}
 } catch (err) {
 	console.error(`Error: ${err.message}`);

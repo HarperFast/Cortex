@@ -1,7 +1,7 @@
-import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { describe, it, mock } from 'node:test';
 
-const mockSearch = mock.fn(function* () {});
+const mockSearch = mock.fn(function*() {});
 
 class MockMemory {
 	static put = mock.fn();
@@ -11,7 +11,7 @@ class MockMemory {
 
 class MockSynapseEntry {
 	static put = mock.fn();
-	static search = mock.fn(function* () {});
+	static search = mock.fn(function*() {});
 	static get = mock.fn();
 }
 
@@ -35,7 +35,9 @@ mock.module('voyageai', {
 	namedExports: {
 		VoyageAIClient: class VoyageAIClient {
 			constructor() {}
-			embed(...args) { return mockEmbed(...args); }
+			embed(...args) {
+				return mockEmbed(...args);
+			}
 		},
 	},
 });
@@ -82,7 +84,7 @@ describe('MemorySearch', () => {
 			$distance: 0.15,
 		};
 
-		mockSearch.mock.mockImplementation(function* () {
+		mockSearch.mock.mockImplementation(function*() {
 			yield fakeResult;
 		});
 
@@ -101,7 +103,7 @@ describe('MemorySearch', () => {
 		}));
 
 		let capturedParams;
-		mockSearch.mock.mockImplementation(function* (params) {
+		mockSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -117,7 +119,7 @@ describe('MemorySearch', () => {
 		}));
 
 		let capturedParams;
-		mockSearch.mock.mockImplementation(function* (params) {
+		mockSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -133,7 +135,7 @@ describe('MemorySearch', () => {
 		}));
 
 		let capturedParams;
-		mockSearch.mock.mockImplementation(function* (params) {
+		mockSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -154,7 +156,7 @@ describe('MemorySearch', () => {
 		}));
 
 		let capturedParams;
-		mockSearch.mock.mockImplementation(function* (params) {
+		mockSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -174,7 +176,7 @@ describe('MemorySearch', () => {
 		}));
 
 		let capturedParams;
-		mockSearch.mock.mockImplementation(function* (params) {
+		mockSearch.mock.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 

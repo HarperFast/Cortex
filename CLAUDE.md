@@ -37,16 +37,19 @@ Slack webhook -> classify (Claude) + embed (Voyage AI) -> store in Memory table 
 Universal Context Broker — ingests development context from any AI tool (Claude Code, Cursor, Windsurf, Copilot) and emits it in any other tool's native format. Full design spec: `docs/synapse-design.md`.
 
 ### New Key Files
+
 - `bin/synapse.js` - CLI: sync, emit, search, watch, status commands
 - `test/synapse-*.test.js` - Tests for classify, search, ingest, emit
 
 ### New Resource Classes (in resources.js)
+
 - `SynapseEntry` - Table extension (strips embeddings, same pattern as MemoryTable)
 - `SynapseSearch` - Semantic search with mandatory `projectId` scoping
 - `SynapseIngest` - Parses tool-native formats into SynapseEntry records
 - `SynapseEmit` - Formats SynapseEntry records into tool-native output
 
 ### Conventions
+
 - SynapseEntry table follows same patterns as Memory (HNSW vector index, classification via Claude Haiku, embeddings via Voyage AI)
 - Use renamed import: `const { SynapseEntry: SynapseEntryBase } = tables;`
 - All Synapse queries must filter on `projectId`
