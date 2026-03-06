@@ -1,3 +1,22 @@
+type SynapseEntry @table {
+	id: ID @primaryKey
+	projectId: String @indexed
+	type: String @indexed
+	content: String
+	source: String @indexed
+	sourceFormat: String
+	embedding: [Float] @indexed(type: "HNSW", distance: "cosine")
+	summary: String
+	status: String @indexed
+	references: [String]
+	tags: [String]
+	entities: Any
+	parentId: String @indexed
+	createdAt: Date @indexed
+	updatedAt: Date @indexed
+	metadata: Any
+}
+
 type Memory @table {
 	id: ID @primaryKey
 	rawText: String

@@ -9,10 +9,16 @@ class MockMemory {
 	static get = mock.fn();
 }
 
+class MockSynapseEntry {
+	static put = mock.fn();
+	static search = mock.fn(function* () {});
+	static get = mock.fn();
+}
+
 mock.module('harperdb', {
 	namedExports: {
 		Resource: class Resource {},
-		tables: { Memory: MockMemory },
+		tables: { Memory: MockMemory, SynapseEntry: MockSynapseEntry },
 	},
 });
 
