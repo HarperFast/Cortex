@@ -41,7 +41,7 @@ INGESTION SOURCES              HARPER FABRIC CLUSTER
 
 ## Prerequisites
 
-- **Node.js** 20+ (recommended: 24 LTS)
+- **Node.js** 22+ (recommended: 24 LTS)
 
 ## Quick Start
 
@@ -180,7 +180,7 @@ Tests use Node.js built-in test runner with module mocking. No extra test depend
 ├── .nvmrc              # Node.js version (24 LTS)
 ├── bin/
 │   └── synapse.js      # Synapse CLI (sync, emit, search, watch, status)
-├── test/               # Test suite (77 tests)
+├── test/               # Test suite (82 tests)
 │   ├── classify.test.js
 │   ├── embedding.test.js
 │   ├── webhook.test.js
@@ -198,11 +198,21 @@ Tests use Node.js built-in test runner with module mocking. No extra test depend
 
 ## How It Works
 
+### Conversational memory (Slack / webhooks)
+
 1. **A source sends an event** via webhook (e.g. Slack message, GitHub issue, Linear task)
 2. **Classification**: Claude Haiku categorizes the content (decision, action_item, knowledge, etc.) and extracts entities (people, projects, technologies)
 3. **Embedding**: Voyage AI generates a 1024-dimensional vector embedding
 4. **Storage**: Raw text, classification, entities, and embedding are stored in the Memory table with HNSW vector indexing
 5. **Retrieval**: Any MCP-connected AI client queries the Memory table using hybrid search (vector similarity + attribute filters)
+
+### Synapse: coding context (CLI / API)
+
+1. **Ingest**: `synapse sync` reads your tool context files (CLAUDE.md, `.cursor/rules/`, `.windsurf/rules/`, `copilot-instructions.md`) and POSTs them to `/SynapseIngest`
+2. **Parse**: Each source format is split into discrete entries; duplicate content is deduplicated via content hash
+3. **Classify + embed**: Each entry is classified into a type (`intent`, `constraint`, `artifact`, `history`) and embedded with Voyage AI
+4. **Storage**: Entries are stored in the SynapseEntry table with HNSW vector indexing, scoped by `projectId`
+5. **Retrieval**: `synapse search` or any MCP client queries `/SynapseSearch`; `synapse emit` formats entries back into any target tool's native format
 
 ## Supported Integrations
 

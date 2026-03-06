@@ -24,7 +24,7 @@ An agent-agnostic AI memory system using Harper Fabric as the vector database an
 
 ```bash
 npm run dev    # Start locally on port 9926
-npm test       # Run all 77 tests
+npm test       # Run all 82 tests
 npm run deploy # Deploy to Harper Fabric
 ```
 
