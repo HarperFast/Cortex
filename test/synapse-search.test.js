@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { describe, it, mock } from 'node:test';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
@@ -48,6 +48,11 @@ process.env.VOYAGE_API_KEY = 'test-key';
 const { SynapseSearch } = await import('../resources.js');
 
 describe('SynapseSearch', () => {
+	beforeEach(() => {
+		mockSynapseSearch.mock.resetCalls();
+		mockEmbed.mock.resetCalls();
+	});
+
 	it('returns error for missing query', async () => {
 		const search = new SynapseSearch();
 		const result = await search.post({ projectId: 'proj-1' });

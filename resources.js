@@ -1,10 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { Resource, tables } from 'harperdb';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { VoyageAIClient } from 'voyageai';
 
-const { Memory } = tables;
-const { SynapseEntry: SynapseEntryBase } = tables;
+const { Memory, SynapseEntry: SynapseEntryBase } = tables;
 
 // ---------------------------------------------------------------------------
 // API Clients (initialized lazily to fail fast on missing env vars)
@@ -404,6 +403,7 @@ export class MemoryTable extends Memory {
 
 const VALID_SYNAPSE_TYPES = new Set(['intent', 'constraint', 'artifact', 'history']);
 const VALID_SYNAPSE_SOURCES = new Set(['claude_code', 'cursor', 'windsurf', 'copilot', 'manual', 'slack']);
+const VALID_EMIT_TARGETS = new Set(['claude_code', 'cursor', 'windsurf', 'copilot', 'markdown']);
 
 const SYNAPSE_CLASSIFICATION_PROMPT =
 	`You are a context classifier for a software development memory system called Synapse. Given a piece of development context, classify it into exactly ONE type and extract metadata.
@@ -489,23 +489,32 @@ function createFallbackSynapseClassification(text) {
 const synapseparsers = {
 	/**
 	 * Parse CLAUDE.md — split on ## headings, each section becomes one entry.
+	 * Content before the first ## heading is preserved as a preamble entry.
 	 */
 	parseClaudeCode(content) {
-		const sections = content.split(/^## /m).filter(Boolean);
+		const sections = content.split(/^## /m);
 		if (sections.length <= 1) {
 			return [{ content, sourceFormat: 'markdown', metadata: { filePath: 'CLAUDE.md' } }];
 		}
-		return sections.map((section) => {
-			const lines = section.split('\n');
+		const entries = [];
+		// First element is preamble (content before any ## heading)
+		const preamble = sections[0].trim();
+		if (preamble) {
+			entries.push({ content: preamble, sourceFormat: 'markdown', metadata: { heading: null, filePath: 'CLAUDE.md' } });
+		}
+		// Remaining elements are ## sections
+		for (let i = 1; i < sections.length; i++) {
+			const lines = sections[i].split('\n');
 			const heading = lines[0].trim();
 			const body = lines.slice(1).join('\n').trim();
-			if (!body) { return null; }
-			return {
+			if (!body) { continue; }
+			entries.push({
 				content: `## ${heading}\n\n${body}`,
 				sourceFormat: 'markdown',
 				metadata: { heading, filePath: 'CLAUDE.md' },
-			};
-		}).filter(Boolean);
+			});
+		}
+		return entries.length > 0 ? entries : [{ content, sourceFormat: 'markdown', metadata: { filePath: 'CLAUDE.md' } }];
 	},
 
 	/**
@@ -530,23 +539,36 @@ const synapseparsers = {
 
 	/**
 	 * Parse Windsurf .md rule files — split on ## headings like Claude Code.
+	 * Content before the first ## heading is preserved as a preamble entry.
 	 */
 	parseWindsurf(content) {
-		const sections = content.split(/^## /m).filter(Boolean);
+		const sections = content.split(/^## /m);
 		if (sections.length <= 1) {
 			return [{ content, sourceFormat: 'markdown', metadata: { format: 'windsurf_rule' } }];
 		}
-		return sections.map((section) => {
-			const lines = section.split('\n');
+		const entries = [];
+		const preamble = sections[0].trim();
+		if (preamble) {
+			entries.push({
+				content: preamble,
+				sourceFormat: 'markdown',
+				metadata: { heading: null, format: 'windsurf_rule' },
+			});
+		}
+		for (let i = 1; i < sections.length; i++) {
+			const lines = sections[i].split('\n');
 			const heading = lines[0].trim();
 			const body = lines.slice(1).join('\n').trim();
-			if (!body) { return null; }
-			return {
+			if (!body) { continue; }
+			entries.push({
 				content: `## ${heading}\n\n${body}`,
 				sourceFormat: 'markdown',
 				metadata: { heading, format: 'windsurf_rule' },
-			};
-		}).filter(Boolean);
+			});
+		}
+		return entries.length > 0
+			? entries
+			: [{ content, sourceFormat: 'markdown', metadata: { format: 'windsurf_rule' } }];
 	},
 
 	/**
@@ -771,12 +793,20 @@ export class SynapseIngest extends Resource {
 
 		for (const entry of entries) {
 			try {
+				// Deterministic ID from content hash — re-ingesting the same content
+				// upserts the existing record rather than creating duplicates.
+				const id = createHash('sha256')
+					.update(`${projectId}:${source}:${entry.content}`)
+					.digest('hex')
+					.substring(0, 32);
+
 				const [classification, embedding] = await Promise.all([
 					classifySynapseEntry(entry.content),
 					generateEmbedding(entry.content),
 				]);
 
 				const record = {
+					id,
 					projectId,
 					type: classification.type,
 					content: entry.content,
@@ -830,8 +860,8 @@ export class SynapseEmit extends Resource {
 	async post(data) {
 		const { target, projectId, types, limit } = data || {};
 
-		if (!target || !VALID_SYNAPSE_SOURCES.has(target)) {
-			return { error: `target must be one of: ${[...VALID_SYNAPSE_SOURCES].join(', ')}` };
+		if (!target || !VALID_EMIT_TARGETS.has(target)) {
+			return { error: `target must be one of: ${[...VALID_EMIT_TARGETS].join(', ')}` };
 		}
 		if (!projectId || typeof projectId !== 'string' || projectId.trim().length === 0) {
 			return { error: 'projectId is required and must be a non-empty string' };
@@ -848,6 +878,13 @@ export class SynapseEmit extends Resource {
 			{ attribute: 'projectId', comparator: 'equals', value: projectId },
 			{ attribute: 'status', comparator: 'equals', value: 'active' },
 		];
+
+		// Push single-type filter to search conditions for efficiency.
+		// Multi-type filters are applied post-query since Harper conditions are AND-joined.
+		const singleTypeFilter = Array.isArray(types) && types.length === 1;
+		if (singleTypeFilter) {
+			conditions.push({ attribute: 'type', comparator: 'equals', value: types[0] });
+		}
 
 		const entries = [];
 		for await (
@@ -869,7 +906,7 @@ export class SynapseEmit extends Resource {
 				limit: emitLimit,
 			})
 		) {
-			if (!types || types.includes(record.type)) {
+			if (singleTypeFilter || !types || types.includes(record.type)) {
 				entries.push(record);
 			}
 		}

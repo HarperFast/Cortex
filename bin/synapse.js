@@ -243,9 +243,10 @@ async function cmdSearch(args) {
 async function cmdStatus() {
 	requireProject();
 
-	// Sample recent entries to show counts
+	// Broad query to approximate entry counts. SynapseSearch requires a
+	// vector query so exact counts would need a dedicated endpoint.
 	const result = await apiPost('/SynapseSearch', {
-		query: 'context architecture decision constraint',
+		query: '*',
 		projectId: PROJECT,
 		limit: 100,
 	});
@@ -346,10 +347,10 @@ Commands:
   emit [options]         Emit context in a target tool's native format
   search <query>         Semantic search across context entries
   watch                  Watch context files and auto-sync on change (2s debounce)
-  status                 Show entry counts by type and source
+  status                 Show approximate entry counts by type and source
 
 Emit options:
-  --target <tool>        Target tool: claude_code, cursor, windsurf, copilot (default: claude_code)
+  --target <tool>        Target tool: claude_code, cursor, windsurf, copilot, markdown (default: claude_code)
   --types <t1,t2>        Filter by entry types: intent,constraint,artifact,history
   --write                Write output files to disk instead of printing
 

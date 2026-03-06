@@ -27,7 +27,7 @@
 		"test:coverage": "node --experimental-test-module-mocks --experimental-test-coverage --test test/*.test.js"
 	},
 	"engines": {
-		"node": ">=20.0.0"
+		"node": ">=22.0.0"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",

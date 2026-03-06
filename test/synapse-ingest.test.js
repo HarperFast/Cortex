@@ -131,6 +131,22 @@ describe('SynapseIngest', () => {
 		assert.ok(Array.isArray(storedRecord.embedding));
 	});
 
+	it('generates deterministic IDs for deduplication', async () => {
+		const ingest = new SynapseIngest();
+		const payload = { source: 'copilot', content: 'Always write tests.', projectId: 'my-project' };
+
+		await ingest.post(payload);
+		const firstId = mockSynapsePut.mock.calls[0].arguments[0].id;
+
+		mockSynapsePut.mock.resetCalls();
+		await ingest.post(payload);
+		const secondId = mockSynapsePut.mock.calls[0].arguments[0].id;
+
+		assert.equal(firstId, secondId);
+		assert.equal(typeof firstId, 'string');
+		assert.ok(firstId.length > 0);
+	});
+
 	describe('parsers', () => {
 		it('parseClaudeCode splits content on ## headings', async () => {
 			const claudeMd = `## Architecture\n\nUse Harper for storage.\n\n## Testing\n\nAlways run npm test.`;
@@ -143,6 +159,23 @@ describe('SynapseIngest', () => {
 
 			assert.equal(result.count, 2);
 			assert.equal(mockSynapsePut.mock.callCount(), 2);
+		});
+
+		it('parseClaudeCode preserves preamble before first heading', async () => {
+			const claudeMd = `# Harper-Cortex\n\nIntro text here.\n\n## Architecture\n\nUse Harper for storage.`;
+			const ingest = new SynapseIngest();
+			const result = await ingest.post({
+				source: 'claude_code',
+				content: claudeMd,
+				projectId: 'proj-1',
+			});
+
+			assert.equal(result.count, 2);
+			assert.equal(mockSynapsePut.mock.callCount(), 2);
+			// First entry is the preamble
+			const preamble = mockSynapsePut.mock.calls[0].arguments[0];
+			assert.ok(preamble.content.includes('Intro text here'));
+			assert.ok(!preamble.content.startsWith('## '));
 		});
 
 		it('parseClaudeCode falls back to single entry when no headings', async () => {

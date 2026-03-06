@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { describe, it, mock } from 'node:test';
+import { beforeEach, describe, it, mock } from 'node:test';
 
 class MockMemory {
 	static put = mock.fn();
@@ -52,6 +52,10 @@ const fakeEntries = [
 ];
 
 describe('SynapseEmit', () => {
+	beforeEach(() => {
+		mockSynapseSearch.mock.resetCalls();
+	});
+
 	it('returns error for missing target', async () => {
 		const emit = new SynapseEmit();
 		const result = await emit.post({ projectId: 'proj-1' });
@@ -65,6 +69,24 @@ describe('SynapseEmit', () => {
 		const result = await emit.post({ target: 'vscode', projectId: 'proj-1' });
 
 		assert.ok(result.error);
+	});
+
+	it('rejects slack as an emit target', async () => {
+		const emit = new SynapseEmit();
+		const result = await emit.post({ target: 'slack', projectId: 'proj-1' });
+
+		assert.ok(result.error);
+		assert.ok(result.error.includes('target must be one of'));
+	});
+
+	it('accepts markdown as an emit target', async () => {
+		mockSynapseSearch.mock.mockImplementation(function*() {});
+
+		const emit = new SynapseEmit();
+		const result = await emit.post({ target: 'markdown', projectId: 'proj-1' });
+
+		assert.ok(!result.error);
+		assert.equal(result.target, 'markdown');
 	});
 
 	it('returns error for missing projectId', async () => {
@@ -144,15 +166,31 @@ describe('SynapseEmit', () => {
 		assert.ok(result.output.files[0].filename.endsWith('.md'));
 	});
 
-	it('filters entries by types param', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {
-			for (const e of fakeEntries) { yield e; }
+	it('pushes single-type filter to search conditions', async () => {
+		let capturedParams;
+		mockSynapseSearch.mock.mockImplementation(function*(params) {
+			capturedParams = params;
+			for (const e of fakeEntries.filter(e => e.type === 'intent')) { yield e; }
 		});
 
 		const emit = new SynapseEmit();
 		const result = await emit.post({ target: 'claude_code', projectId: 'my-project', types: ['intent'] });
 
 		assert.equal(result.entryCount, 1);
+		const typeCondition = capturedParams.conditions.find(c => c.attribute === 'type');
+		assert.ok(typeCondition);
+		assert.equal(typeCondition.value, 'intent');
+	});
+
+	it('post-filters when multiple types provided', async () => {
+		mockSynapseSearch.mock.mockImplementation(function*() {
+			for (const e of fakeEntries) { yield e; }
+		});
+
+		const emit = new SynapseEmit();
+		const result = await emit.post({ target: 'claude_code', projectId: 'my-project', types: ['intent', 'constraint'] });
+
+		assert.equal(result.entryCount, 2);
 	});
 
 	it('returns entryCount of 0 when no entries exist', async () => {
