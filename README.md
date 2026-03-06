@@ -11,8 +11,9 @@ When you use Claude, ChatGPT, or Cursor, your conversation history and learned c
 Deploy a centralized vector database on Harper Fabric and connect it to your AI agents via [MCP (Model Context Protocol)](https://modelcontextprotocol.io). All your tools read and write to the same unified memory pool.
 
 ```
-Slack / GitHub / Linear / ...  ──webhook──▶  Harper Fabric  ◀──MCP──▶  Claude Desktop / Cursor / ...
-                                              (vector DB)
+Slack / GitHub / ...     ──webhook──┐
+                                    ├──▶  Harper Fabric  ◀──MCP──▶  Claude Desktop / Cursor / ...
+CLAUDE.md / .cursor/ ... ──CLI/API──┘      (vector DB)
 ```
 
 ## Architecture
@@ -20,19 +21,23 @@ Slack / GitHub / Linear / ...  ──webhook──▶  Harper Fabric  ◀──M
 ```
 INGESTION SOURCES              HARPER FABRIC CLUSTER
 ┌──────────────┐
-│ Slack        │ ──▶ ┌───────────────────────────────────────────┐
-│ Events API   │     │  Webhook Resource (e.g. SlackWebhook)     │
-└──────────────┘     │                                           │
-                     │  classify (Claude) + embed (Voyage AI)    │
-┌──────────────┐     │              │                            │
-│ GitHub       │ ──▶ │  ┌───────────▼──────────────────────────┐ │
-│ Webhooks     │     │  │  Memory Table (HNSW vector index)    │ │
-└──────────────┘     │  └───────────┬──────────────────────────┘ │
-                     │              │                            │
-┌──────────────┐     │  ┌───────────▼──────────────────────────┐ │
-│ Linear / ... │ ──▶ │  │  MCP Server + MemorySearch endpoint  │ │
-└──────────────┘     │  └───────────┬──────────────────────────┘ │
-                     └─────────────┼─────────────────────────────┘
+│ Slack        │ ──▶ ┌─────────────────────────────────────────────┐
+│ Events API   │     │  Webhook Resource (classify + embed)        │
+└──────────────┘     │              │                              │
+┌──────────────┐     │  ┌───────────▼─────────────────────────┐   │
+│ GitHub / ... │ ──▶ │  │  Memory Table (HNSW vector index)   │   │
+└──────────────┘     │  └─────────────────────────────────────┘   │
+                     │                                             │
+┌──────────────┐     │  SynapseIngest (parse + classify + embed)  │
+│ CLAUDE.md    │     │              │                              │
+│ .cursor/rules│ ──▶ │  ┌───────────▼─────────────────────────┐   │
+│ .windsurf/   │     │  │  SynapseEntry Table (HNSW idx)      │   │
+│ copilot-inst │     │  └───────────┬─────────────────────────┘   │
+└──────────────┘     │              │                              │
+(synapse CLI/API)    │  ┌───────────▼─────────────────────────┐   │
+                     │  │  MCP Server + Search/Emit endpoints  │   │
+                     │  └───────────┬─────────────────────────┘   │
+                     └─────────────┼───────────────────────────── ┘
                                    │ MCP JSON-RPC
               ┌────────────────────┼────────────────────┐
               ▼                    ▼                    ▼
