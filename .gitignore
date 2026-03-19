@@ -5,3 +5,7 @@ node_modules/
 .claude/
 .agent/
 .agents/
+
+# Working documents
+docs/generate-proposal.cjs
+docs/openclaw-proposal.docx
