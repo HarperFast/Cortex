@@ -21,27 +21,38 @@ CLAUDE.md / .cursor/ ... ──CLI/API──┘      (vector DB)
 ```
 INGESTION SOURCES              HARPER FABRIC CLUSTER
 ┌──────────────┐
-│ Slack        │ ──▶ ┌─────────────────────────────────────────────┐
-│ Events API   │     │  Webhook Resource (classify + embed)        │
-└──────────────┘     │              │                              │
-┌──────────────┐     │  ┌───────────▼─────────────────────────┐   │
-│ GitHub / ... │ ──▶ │  │  Memory Table (HNSW vector index)   │   │
-└──────────────┘     │  └─────────────────────────────────────┘   │
-                     │                                             │
-┌──────────────┐     │  SynapseIngest (parse + classify + embed)  │
-│ CLAUDE.md    │     │              │                              │
-│ .cursor/rules│ ──▶ │  ┌───────────▼─────────────────────────┐   │
-│ .windsurf/   │     │  │  SynapseEntry Table (HNSW idx)      │   │
-│ copilot-inst │     │  └───────────┬─────────────────────────┘   │
-└──────────────┘     │              │                              │
-(synapse CLI/API)    │  ┌───────────▼─────────────────────────┐   │
-                     │  │  MCP Server + Search/Emit endpoints  │   │
-                     │  └───────────┬─────────────────────────┘   │
-                     └─────────────┼───────────────────────────── ┘
-                                   │ MCP JSON-RPC
-              ┌────────────────────┼────────────────────┐
-              ▼                    ▼                    ▼
-       Claude Desktop           Cursor           Any MCP Client
+│ Slack        │ ──▶ ┌──────────────────────────────────────────────────┐
+│ Events API   │     │  SlackWebhook (classify + embed)                 │
+└──────────────┘     │              │                                   │
+┌──────────────┐     │  ┌───────────▼────────────────────────────────┐  │
+│ GitHub / ... │ ──▶ │  │  Memory Table (HNSW vector index)          │  │
+│ LangChain    │     │  │  ├─ agentId (namespace isolation)          │  │
+│ cortex-client│     │  │  ├─ contentHash (exact dedup)              │  │
+└──────────────┘     │  │  └─ supersedes (provenance chain)          │  │
+                     │  └────────────────────────────────────────────┘  │
+                     │                                                  │
+                     │  Memory Endpoints:                               │
+                     │  ├─ MemorySearch (semantic + attribute filters)  │
+                     │  ├─ VectorSearch (pre-computed embeddings)       │
+                     │  ├─ BatchUpsert (bulk operations)                │
+                     │  ├─ MemoryStore (dedup-aware storage)            │
+                     │  ├─ MemoryCount (filtered counts)                │
+                     │  └─ DELETE /Memory/{id}                          │
+                     │                                                  │
+┌──────────────┐     │  SynapseIngest (parse + classify + embed)       │
+│ CLAUDE.md    │     │              │                                   │
+│ .cursor/rules│ ──▶ │  ┌───────────▼────────────────────────────────┐  │
+│ .windsurf/   │     │  │  SynapseEntry Table (HNSW idx)             │  │
+│ copilot-inst │     │  └───────────┬────────────────────────────────┘  │
+└──────────────┘     │              │                                   │
+(synapse CLI/API)    │  ┌───────────▼────────────────────────────────┐  │
+                     │  │  MCP Server (7 tools + 6 admin tools)      │  │
+                     │  └───────────┬────────────────────────────────┘  │
+                     └──────────────┼───────────────────────────────────┘
+                                    │ MCP JSON-RPC
+              ┌─────────────────────┼─────────────────────┐
+              ▼                     ▼                     ▼
+       Claude Desktop            Cursor            Any MCP Client
 ```
 
 ## Prerequisites
@@ -131,14 +142,46 @@ See [docs/mcp-setup.md](docs/mcp-setup.md) for configuration instructions.
 | `SYNAPSE_PROJECT`      | For Synapse CLI | Project ID to scope context entries                                      |
 | `SYNAPSE_AUTH`         | For Synapse CLI | Authorization header (e.g. `Basic dXNlcjpwYXNz`)                         |
 
+## Schema
+
+The Memory table stores all ingested content with HNSW vector indexing for semantic search:
+
+| Field            | Type       | Description                                                     |
+| ---------------- | ---------- | --------------------------------------------------------------- |
+| `id`             | ID         | Primary key                                                     |
+| `rawText`        | String     | Original content                                                |
+| `source`         | String     | Origin platform (e.g. `slack`) — indexed                        |
+| `sourceType`     | String     | Content type (e.g. `message`) — indexed                         |
+| `channelId`      | String     | Source channel — indexed                                        |
+| `channelName`    | String     | Human-readable channel name                                     |
+| `authorId`       | String     | Author identifier — indexed                                     |
+| `authorName`     | String     | Human-readable author name                                      |
+| `agentId`        | String     | Namespace for multi-agent isolation — indexed                   |
+| `classification` | String     | AI-assigned category (decision, action_item, etc.) — indexed    |
+| `entities`       | Any        | Extracted entities (people, projects, technologies, topics)     |
+| `embedding`      | [Float]    | 384-dim vector — HNSW indexed (cosine distance)                 |
+| `contentHash`    | String     | SHA-256 hash of normalized text — indexed (exact dedup)         |
+| `supersedes`     | String     | ID of the memory this record replaces (provenance chain)        |
+| `summary`        | String     | AI-generated summary                                            |
+| `timestamp`      | Date       | When the content was created — indexed                          |
+| `threadTs`       | String     | Thread identifier (for threaded conversations)                  |
+| `metadata`       | Any        | Arbitrary metadata                                              |
+
 ## API Endpoints
 
-| Endpoint        | Method | Description                                                                  |
-| --------------- | ------ | ---------------------------------------------------------------------------- |
-| `/SlackWebhook` | POST   | Receives Slack Events API payloads. Classifies, embeds, and stores messages. |
-| `/MemorySearch` | POST   | Semantic search. Send `{ "query": "...", "limit": 10, "filters": {} }`       |
-| `/Memory/`      | GET    | List all memories (with pagination)                                          |
-| `/Memory/{id}`  | GET    | Get a single memory by ID                                                    |
+### Memory Endpoints
+
+| Endpoint          | Method | Description                                                                  |
+| ----------------- | ------ | ---------------------------------------------------------------------------- |
+| `/SlackWebhook`   | POST   | Receives Slack Events API payloads. Classifies, embeds, and stores messages. |
+| `/MemorySearch`   | POST   | Semantic search with attribute filters and score normalization (0-1)         |
+| `/VectorSearch`   | POST   | Search with a pre-computed embedding vector (for LangChain / server-to-server) |
+| `/BatchUpsert`    | POST   | Insert or update multiple memory records in a single request                 |
+| `/MemoryStore`    | POST   | Dedup-aware storage: SHA-256 hash + vector similarity dedup before insert    |
+| `/MemoryCount`    | POST   | Count memories with optional filters (source, classification, agentId, etc.) |
+| `/Memory/`        | GET    | List all memories (with pagination)                                          |
+| `/Memory/{id}`    | GET    | Get a single memory by ID                                                    |
+| `/Memory/{id}`    | DELETE | Delete a memory by ID                                                        |
 
 ### MemorySearch Request
 
@@ -150,10 +193,53 @@ See [docs/mcp-setup.md](docs/mcp-setup.md) for configuration instructions.
 		"classification": "decision",
 		"source": "slack",
 		"channelId": "C0123456",
-		"authorId": "U0123456"
+		"authorId": "U0123456",
+		"agentId": "my-agent"
 	}
 }
 ```
+
+Results include a normalized `similarity` score (0-1, where 1 = exact match) alongside the raw `$distance` value for backwards compatibility.
+
+### VectorSearch Request
+
+For clients that handle their own embeddings (e.g. LangChain with a custom embedding model):
+
+```json
+{
+	"vector": [0.1, -0.2, 0.3, "... (384 floats)"],
+	"limit": 10,
+	"filter": { "classification": "decision" }
+}
+```
+
+### MemoryStore Request (with dedup)
+
+Two-phase deduplication: (1) SHA-256 content hash for exact matches, (2) vector similarity for semantic near-duplicates. Duplicates are updated in-place rather than creating new records.
+
+```json
+{
+	"text": "We decided to use Redis for the caching layer",
+	"agentId": "my-agent",
+	"dedupThreshold": 0.95
+}
+```
+
+Response: `{ "action": "created" | "deduplicated", "id": "..." }`
+
+### BatchUpsert Request
+
+```json
+{
+	"table": "Memory",
+	"records": [
+		{ "rawText": "First memory", "source": "api" },
+		{ "rawText": "Second memory", "source": "api", "embedding": [0.1, ...] }
+	]
+}
+```
+
+Records without an `embedding` field are embedded server-side automatically.
 
 ## Scripts
 
@@ -207,7 +293,7 @@ Tests use Node.js built-in test runner with module mocking. No extra test depend
 2. **Classification**: Claude Haiku categorizes the content (decision, action_item, knowledge, etc.) and extracts entities (people, projects, technologies)
 3. **Embedding**: A local ONNX model (`all-MiniLM-L6-v2`) generates a 384-dimensional vector embedding — no API key required
 4. **Storage**: Raw text, classification, entities, and embedding are stored in the Memory table with HNSW vector indexing
-5. **Retrieval**: Any MCP-connected AI client queries the Memory table using hybrid search (vector similarity + attribute filters)
+5. **Retrieval**: Any MCP-connected AI client queries the Memory table using hybrid search (vector similarity + attribute filters). Results include normalized similarity scores (0-1) and can be filtered by `agentId` for multi-agent isolation
 
 ### Synapse: coding context (CLI / API)
 
@@ -336,6 +422,17 @@ SYNAPSE_PROJECT=my-app synapse status
 | `/SynapseEntry/` | GET    | List/browse all context entries.                                      |
 
 See [docs/synapse-design.md](docs/synapse-design.md) for full architecture details.
+
+## Client Libraries & Integrations
+
+Official packages for integrating with Cortex from your applications:
+
+| Package | Description | Repo |
+| ------- | ----------- | ---- |
+| **@harperfast/cortex-client** | Lightweight HTTP-only TypeScript client. Zero dependencies, dual ESM/CJS. Flair-style namespaced API (`client.memory.search`, `client.synapse.ingest`, etc.) | [HarperFast/cortex-client](https://github.com/HarperFast/cortex-client) |
+| **@langchain/harper** | LangChain.js VectorStore and Retriever backed by Cortex. Drop-in integration for any LangChain RAG pipeline. | [HarperFast/langchain-harper](https://github.com/HarperFast/langchain-harper) |
+| **@harper/openclaw-memory** | OpenClaw/NemoClaw memory plugin. Auto-recall and auto-capture lifecycle hooks, remember/recall/forget/count agent tools. | [HarperFast/openclaw-memory](https://github.com/HarperFast/openclaw-memory) |
+| **@harperfast/cortex-mcp-server** | Remote MCP server exposing Cortex to Claude, Cursor, Windsurf. 7 standard tools + 6 admin tools. Standalone or Harper deployment modes. | [HarperFast/cortex-mcp-server](https://github.com/HarperFast/cortex-mcp-server) |
 
 ## Agent Skills
 
