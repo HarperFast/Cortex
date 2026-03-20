@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { pipeline } from '@xenova/transformers';
+import { pipeline } from '@huggingface/transformers';
 import { Resource, tables } from 'harperdb';
-import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
+import { createHash, createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 const { Memory, SynapseEntry: SynapseEntryBase } = tables;
 
@@ -55,8 +55,8 @@ function log(level, message, context = {}) {
 // Constants
 // ---------------------------------------------------------------------------
 
-const CLASSIFICATION_MODEL = 'claude-haiku-3-5-20241022';
-const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
+const CLASSIFICATION_MODEL = process.env.CLASSIFICATION_MODEL || 'claude-haiku-3-5-20241022';
+const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || 'Xenova/all-MiniLM-L6-v2';
 const DEFAULT_SEARCH_LIMIT = 10;
 const MAX_SEARCH_LIMIT = 100;
 
@@ -91,6 +91,27 @@ Respond with valid JSON only, in this exact format:
 }`;
 
 // ---------------------------------------------------------------------------
+// Helper: Build filter conditions for Memory search/count
+// ---------------------------------------------------------------------------
+
+const MEMORY_FILTER_FIELDS = ['source', 'classification', 'channelId', 'authorId', 'agentId'];
+
+function buildFilterConditions(filters, allowedFields = MEMORY_FILTER_FIELDS) {
+	if (!filters || typeof filters !== 'object') return undefined;
+
+	const conditions = [];
+	for (const field of allowedFields) {
+		if (filters[field]) {
+			conditions.push({ attribute: field, comparator: 'equals', value: filters[field] });
+		}
+	}
+
+	if (conditions.length === 0) return undefined;
+	if (conditions.length === 1) return conditions[0];
+	return conditions;
+}
+
+// ---------------------------------------------------------------------------
 // Helper: Classify a message using Claude API
 // ---------------------------------------------------------------------------
 
@@ -113,7 +134,12 @@ export async function classifyMessage(text) {
 			],
 		});
 
-		const parsed = JSON.parse(message.content[0].text);
+		const responseText = message?.content?.[0]?.text;
+		if (!responseText) {
+			log('warn', 'Classification returned empty response');
+			return createFallbackClassification(text);
+		}
+		const parsed = JSON.parse(responseText);
 
 		if (!parsed.category || !VALID_CATEGORIES.has(parsed.category)) {
 			log('warn', 'LLM returned invalid category, using fallback', {
@@ -188,10 +214,26 @@ export function verifySlackSignature(signingSecret, signature, timestamp, body) 
 
 export class SlackWebhook extends Resource {
 	async post(data) {
-		// Handle Slack URL verification challenge
+		// Handle Slack URL verification challenge (must pass before signature check)
 		if (data?.type === 'url_verification') {
 			log('info', 'Slack URL verification challenge received');
 			return { challenge: data.challenge };
+		}
+
+		// Verify Slack request signature if signing secret is configured
+		const signingSecret = process.env.SLACK_SIGNING_SECRET;
+		if (signingSecret) {
+			const headers = this.getHeaders?.() || {};
+			const timestamp = headers['x-slack-request-timestamp'] || headers['X-Slack-Request-Timestamp'];
+			const signature = headers['x-slack-signature'] || headers['X-Slack-Signature'];
+			const rawBody = typeof data === 'string' ? data : JSON.stringify(data);
+
+			if (!verifySlackSignature(signingSecret, signature, timestamp, rawBody)) {
+				log('warn', 'Slack signature verification failed', { timestamp });
+				return { status: 401, error: 'Invalid request signature' };
+			}
+		} else {
+			log('warn', 'SLACK_SIGNING_SECRET not set — skipping signature verification');
 		}
 
 		// Ignore non-event callbacks
@@ -263,6 +305,7 @@ export class SlackWebhook extends Resource {
 		]);
 
 		const memoryRecord = {
+			id: randomUUID(),
 			rawText: event.text,
 			source: 'slack',
 			sourceType: event.thread_ts ? 'thread_reply' : 'message',
@@ -341,30 +384,9 @@ export class MemorySearch extends Resource {
 		};
 
 		// Apply optional attribute filters for hybrid search
-		if (filters && typeof filters === 'object') {
-			const conditions = [];
-
-			if (filters.source) {
-				conditions.push({ attribute: 'source', comparator: 'equals', value: filters.source });
-			}
-			if (filters.classification) {
-				conditions.push({ attribute: 'classification', comparator: 'equals', value: filters.classification });
-			}
-			if (filters.channelId) {
-				conditions.push({ attribute: 'channelId', comparator: 'equals', value: filters.channelId });
-			}
-			if (filters.authorId) {
-				conditions.push({ attribute: 'authorId', comparator: 'equals', value: filters.authorId });
-			}
-			if (filters.agentId) {
-				conditions.push({ attribute: 'agentId', comparator: 'equals', value: filters.agentId });
-			}
-
-			if (conditions.length === 1) {
-				searchParams.conditions = conditions[0];
-			} else if (conditions.length > 1) {
-				searchParams.conditions = conditions;
-			}
+		const filterConditions = buildFilterConditions(filters);
+		if (filterConditions) {
+			searchParams.conditions = filterConditions;
 		}
 
 		const results = [];
@@ -397,30 +419,9 @@ export class MemoryCount extends Resource {
 		};
 
 		// Apply optional filters
-		if (filters && typeof filters === 'object') {
-			const conditions = [];
-
-			if (filters.source) {
-				conditions.push({ attribute: 'source', comparator: 'equals', value: filters.source });
-			}
-			if (filters.classification) {
-				conditions.push({ attribute: 'classification', comparator: 'equals', value: filters.classification });
-			}
-			if (filters.channelId) {
-				conditions.push({ attribute: 'channelId', comparator: 'equals', value: filters.channelId });
-			}
-			if (filters.authorId) {
-				conditions.push({ attribute: 'authorId', comparator: 'equals', value: filters.authorId });
-			}
-			if (filters.agentId) {
-				conditions.push({ attribute: 'agentId', comparator: 'equals', value: filters.agentId });
-			}
-
-			if (conditions.length === 1) {
-				searchParams.conditions = conditions[0];
-			} else if (conditions.length > 1) {
-				searchParams.conditions = conditions;
-			}
+		const filterConditions = buildFilterConditions(filters);
+		if (filterConditions) {
+			searchParams.conditions = filterConditions;
 		}
 
 		let count = 0;
@@ -519,6 +520,7 @@ export class MemoryStore extends Resource {
 		]);
 
 		const memoryRecord = {
+			id: randomUUID(),
 			rawText: text,
 			contentHash,
 			source: 'api',
@@ -567,8 +569,10 @@ export class MemoryTable extends Memory {
 	get(target) {
 		const record = super.get(target);
 		if (record && typeof record === 'object') {
-			const { embedding: _, ...rest } = record;
-			return rest;
+			// Convert Harper record proxy to plain object, then strip embedding
+			const plain = JSON.parse(JSON.stringify(record));
+			delete plain.embedding;
+			return plain;
 		}
 		return record;
 	}
@@ -631,7 +635,12 @@ export async function classifySynapseEntry(text) {
 			],
 		});
 
-		const parsed = JSON.parse(message.content[0].text);
+		const responseText = message?.content?.[0]?.text;
+		if (!responseText) {
+			log('warn', 'Synapse classification returned empty response');
+			return createFallbackSynapseClassification(text);
+		}
+		const parsed = JSON.parse(responseText);
 
 		if (!parsed.type || !VALID_SYNAPSE_TYPES.has(parsed.type)) {
 			log('warn', 'Synapse LLM returned invalid type, using fallback', {
@@ -667,7 +676,7 @@ function createFallbackSynapseClassification(text) {
 // Synapse Parsers - Convert tool-native formats into entry-shaped objects
 // ---------------------------------------------------------------------------
 
-const synapseparsers = {
+const synapseParsers = {
 	/**
 	 * Parse CLAUDE.md — split on ## headings, each section becomes one entry.
 	 * Content before the first ## heading is preserved as a preamble entry.
@@ -872,8 +881,10 @@ export class SynapseEntry extends SynapseEntryBase {
 	get(target) {
 		const record = super.get(target);
 		if (record && typeof record === 'object') {
-			const { embedding: _, ...rest } = record;
-			return rest;
+			// Convert Harper record proxy to plain object, then strip embedding
+			const plain = JSON.parse(JSON.stringify(record));
+			delete plain.embedding;
+			return plain;
 		}
 		return record;
 	}
@@ -1026,13 +1037,13 @@ export class SynapseIngest extends Resource {
 	_parseContent(source, content) {
 		switch (source) {
 			case 'claude_code':
-				return synapseparsers.parseClaudeCode(content);
+				return synapseParsers.parseClaudeCode(content);
 			case 'cursor':
-				return synapseparsers.parseCursor(content);
+				return synapseParsers.parseCursor(content);
 			case 'windsurf':
-				return synapseparsers.parseWindsurf(content);
+				return synapseParsers.parseWindsurf(content);
 			case 'copilot':
-				return synapseparsers.parseCopilot(content);
+				return synapseParsers.parseCopilot(content);
 			default:
 				return [{ content, sourceFormat: 'markdown', metadata: {} }];
 		}
