@@ -142,6 +142,10 @@ export class MemorySearch extends Resource {
 			return { error: 'query is required and must be a non-empty string' };
 		}
 
+		if (process.env.REQUIRE_AGENT_NAMESPACE === 'true' && !filters?.agentId) {
+			return { error: 'agentId is required when REQUIRE_AGENT_NAMESPACE is enabled' };
+		}
+
 		const searchLimit = Math.min(
 			Math.max(1, parseInt(limit, 10) || DEFAULT_SEARCH_LIMIT),
 			MAX_SEARCH_LIMIT,
@@ -224,6 +228,10 @@ export class MemorySearch extends Resource {
 export class MemoryCount extends Resource {
 	async post(data) {
 		const { filters } = data || {};
+
+		if (process.env.REQUIRE_AGENT_NAMESPACE === 'true' && !filters?.agentId) {
+			return { error: 'agentId is required when REQUIRE_AGENT_NAMESPACE is enabled' };
+		}
 
 		log('info', 'Memory count requested', { filters });
 
