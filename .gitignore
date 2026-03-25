@@ -1,10 +1,15 @@
 node_modules/
+dist/
+*.tsbuildinfo
 .env
+.env.local
+.env.*.local
 *.log
 .DS_Store
 .claude/
 .agent/
 .agents/
+coverage/
 
 # Working documents
 docs/generate-proposal.cjs

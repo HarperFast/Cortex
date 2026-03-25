@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Lint & Test
+  ci:
+    name: Lint, Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,6 +25,9 @@ jobs:
 
       - name: Lint
         run: npm run lint:check
+
+      - name: Build
+        run: npm run build
 
       - name: Test
         run: npm test

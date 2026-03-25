@@ -1,12 +1,13 @@
 {
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
 	"ignorePatterns": [
-		"node_modules/"
+		"node_modules/",
+		"dist/"
 	],
 	"rules": {},
 	"overrides": [
 		{
-			"files": ["test/**"],
+			"files": ["**/test/**", "**/tests/**", "**/__tests__/**"],
 			"rules": {
 				"unicorn/no-new-array": "off",
 				"require-yield": "off"

@@ -1,0 +1,53 @@
+# Multi-tenant support tables for cortex-mcp-server
+# Add these to your Cortex schema.graphql to enable multi-tenant mode
+
+type Tenant @table @export {
+	id: ID @primaryKey
+	name: String
+	namespace: String @indexed
+	tier: String
+	status: String @indexed
+	maxMemories: Int
+	maxSynapseEntries: Int
+	createdAt: String
+	updatedAt: String
+	createdBy: String
+}
+
+type TenantSecurityPolicy @table @export {
+	tenantId: String @primaryKey
+	injectionBlockPolicy: String
+	fuzzyDedupPolicy: String
+	maxContentLength: Int
+	enableModeration: Boolean
+	createdAt: String
+	updatedAt: String
+}
+
+type TokenRevocation @table @export {
+	id: ID @primaryKey
+	tenantId: String @indexed
+	tokenJti: String @indexed
+	revokedAt: String
+	reason: String
+}
+
+type RateLimitBucket @table @export {
+	id: ID @primaryKey
+	tenantId: String @indexed
+	metric: String
+	windowStart: String @indexed
+	count: Int
+}
+
+type ContentAuditLog @table @export {
+	id: ID @primaryKey
+	tenantId: String @indexed
+	timestamp: String @indexed
+	action: String
+	memoryId: String @indexed
+	detectedPatterns: [String]
+	contentHash: String
+	source: String
+	reason: String
+}

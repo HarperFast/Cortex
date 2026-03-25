@@ -26,10 +26,14 @@ jobs:
 
       - run: npm ci
 
+      - name: Build
+        run: npm run build
+
       - name: Test
         run: npm test
 
-      - name: Release
+      - name: Release Cortex
+        working-directory: packages/cortex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release

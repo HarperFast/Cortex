@@ -1,70 +1,91 @@
-# Cortex
+# Cortex Monorepo
 
 An agent-agnostic AI memory system using Harper Fabric as the vector database and MCP for AI agent connectivity.
 
+## Monorepo Structure
+
+This is an npm workspaces monorepo with 4 packages:
+
+| Package                         | Path                          | Language   | Description                                                             |
+| ------------------------------- | ----------------------------- | ---------- | ----------------------------------------------------------------------- |
+| `@harperfast/cortex`            | `packages/cortex/`            | JavaScript | Harper Fabric app — Memory + Synapse tables, classification, embeddings |
+| `@harperfast/cortex-client`     | `packages/cortex-client/`     | TypeScript | Lightweight HTTP SDK for Cortex                                         |
+| `@harper/openclaw-memory`       | `packages/openclaw-memory/`   | TypeScript | OpenClaw plugin — auto-recall/capture lifecycle hooks                   |
+| `@harperfast/cortex-mcp-server` | `packages/cortex-mcp-server/` | TypeScript | MCP server — bridges AI agents to Cortex                                |
+
 ## Tech Stack
 
-- **Runtime**: Harper (Node.js-based, ES modules)
+- **Runtime**: Harper Fabric (Node.js-based, ES modules)
 - **Database**: Harper Fabric with HNSW vector indexing
-- **Classification**: Anthropic Claude Haiku 3.5 (`claude-haiku-3-5-20241022`)
-- **Embeddings**: `@xenova/transformers` with `all-MiniLM-L6-v2` (384-dim, Harper-native ONNX)
-- **Ingestion**: Slack Events API webhooks
-- **AI Bridge**: Harper MCP Server + `mcp-remote`
-- **Tests**: Node.js built-in test runner (`node:test`)
-
-## Key Files
-
-- `resources.js` - Core application: SlackWebhook, MemorySearch, MemoryTable + all Synapse resource classes + helpers
-- `schema.graphql` - Memory and SynapseEntry tables with HNSW vector indexes (no @export since we extend them)
-- `config.yaml` - Harper app config (loadEnv, REST, schema, resource files)
-- `.env.example` - All required environment variables documented
-- `bin/synapse.js` - Synapse CLI: sync, emit, search, watch, status commands
+- **Classification**: Provider-agnostic (Anthropic, OpenAI, Google, Ollama, local fallback)
+- **Embeddings**: `@huggingface/transformers` with `all-MiniLM-L6-v2` (384-dim, ONNX)
+- **Tests**: Vitest (workspace mode, ~150 tests across all packages)
+- **Formatting**: dprint (tabs, preferSingle)
+- **Linting**: oxlint
 
 ## Development
 
 ```bash
-npm run dev    # Start locally on port 9926
-npm test       # Run all 82 tests
-npm run deploy # Deploy to Harper Fabric
+npm ci                # Install all workspace dependencies
+npm test              # Run all tests across all packages
+npm run build         # Build all TypeScript packages
+npm run format:check  # Check formatting (dprint)
+npm run lint:check    # Lint all packages (oxlint)
 ```
 
-## Architecture
+### Package-specific commands
 
-Slack webhook -> classify (Claude) + embed (@xenova/transformers) -> store in Memory table -> query via MCP from Claude Desktop/Cursor.
+```bash
+# Cortex Core (Harper Fabric app)
+cd packages/cortex
+npm run dev           # Start Harper dev server on port 9926
+npm run deploy        # Deploy to Harper Fabric
 
-## Synapse
+# cortex-mcp-server
+npm run dev -w packages/cortex-mcp-server   # Start MCP server with HTTP transport
+```
 
-Universal Context Broker — ingests development context from any AI tool (Claude Code, Cursor, Windsurf, Copilot) and emits it in any other tool's native format. Full design spec: `docs/synapse-design.md`.
+## Key Files
 
-### New Key Files
+### packages/cortex/ (Harper Fabric app)
 
-- `bin/synapse.js` - CLI: sync, emit, search, watch, status commands
-- `test/synapse-*.test.js` - Tests for classify, search, ingest, emit
+- `schema.graphql` — Memory + SynapseEntry tables with HNSW vector indexes
+- `config.yaml` — Harper app config
+- `resources/` — Modular resource classes (memory.js, synapse.js, slack-webhook.js, shared.js, classification-provider.js)
+- `resources.js` — Barrel re-export for backward compatibility
+- `bin/synapse.js` — Synapse CLI
+- `.env.example` — All environment variables documented
 
-### New Resource Classes (in resources.js)
+### packages/cortex-client/
 
-- `SynapseEntry` - Table extension (strips embeddings, same pattern as MemoryTable)
-- `SynapseSearch` - Semantic search with mandatory `projectId` scoping
-- `SynapseIngest` - Parses tool-native formats into SynapseEntry records
-- `SynapseEmit` - Formats SynapseEntry records into tool-native output
+- `src/client.ts` — HTTP client core
+- `src/memory.ts` — Memory API (search, store, recall, forget, count, vectorSearch, batchUpsert)
+- `src/synapse.ts` — Synapse API (search, ingest, emit, delete)
 
-### Conventions
+### packages/openclaw-memory/
 
-- SynapseEntry table follows same patterns as Memory (HNSW vector index, classification via Claude Haiku, embeddings via @xenova/transformers)
-- Use renamed import: `const { SynapseEntry: SynapseEntryBase } = tables;`
-- All Synapse queries must filter on `projectId`
-- Default status filter is `active` (excludes superseded/archived)
+- `src/lifecycle.ts` — auto-recall (before turn) + auto-capture (after turn) hooks
+- `src/safety.ts` — Content safety filtering
+- `openclaw.plugin.json` — Plugin manifest
+
+### packages/cortex-mcp-server/
+
+- `src/index.ts` — MCP server (stdio + HTTP transport)
+- `src/tools/` — Tool implementations (memory, synapse, admin, audit)
+- `src/auth.ts` — JWT/JWKS authentication
+- `src/quota.ts` — Per-agent storage quota enforcement
+- `harper/` — Harper Custom Resource deployment (self-contained)
 
 ## Agent Skills
 
-Skills from `harperfast/skills` are tracked in `skills-lock.json` and installed into `.agents/skills/` (git-ignored). Refer to the relevant skill rules when making changes:
+Skills from `harperfast/skills` are tracked in `packages/cortex/skills-lock.json`. Refer to the relevant skill rules when modifying Harper-specific files:
 
-- **`harper-best-practices`** — Apply when modifying `schema.graphql`, `resources.js`, or `config.yaml`. Covers schema design, custom resources, authentication, vector indexing, and deployment.
+- **`harper-best-practices`** — Apply when modifying `schema.graphql`, `resources.js`, or `config.yaml`
 
 ## Conventions
 
 - ES module syntax (import/export)
 - No @export on tables that are extended in resources.js
-- Structured JSON logging (info, warn, error)
-- Slack signature verification for webhook security
-- Async processing to stay within Slack's 3-second timeout
+- Shared TypeScript config: `tsconfig.base.json` at root, extended by each TS package
+- Shared devDependencies (vitest, typescript, dprint, oxlint) at root
+- Package-specific dependencies stay in each package
