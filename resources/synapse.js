@@ -2,13 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { Resource, tables } from 'harperdb';
 import { createHash } from 'node:crypto';
 import { classifyMemory } from './classification-provider.js';
-import {
-	EMBEDDING_MODEL,
-	DEFAULT_SEARCH_LIMIT,
-	MAX_SEARCH_LIMIT,
-	generateEmbedding,
-	log,
-} from './shared.js';
+import { DEFAULT_SEARCH_LIMIT, generateEmbedding, log, MAX_SEARCH_LIMIT } from './shared.js';
 
 const { SynapseEntry: SynapseEntryBase } = tables;
 

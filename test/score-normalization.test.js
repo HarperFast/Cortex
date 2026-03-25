@@ -3,8 +3,16 @@ import { describe, it, vi } from 'vitest';
 
 const { mockSearch, MockMemory, MockSynapseEntry, mockExtractor } = vi.hoisted(() => {
 	const mockSearch = vi.fn(function*() {});
-	class MockMemory { static put = vi.fn(); static search = mockSearch; static get = vi.fn(); }
-	class MockSynapseEntry { static put = vi.fn(); static search = mockSearch; static get = vi.fn(); }
+	class MockMemory {
+		static put = vi.fn();
+		static search = mockSearch;
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = vi.fn();
+		static search = mockSearch;
+		static get = vi.fn();
+	}
 	const mockExtractor = vi.fn();
 	return { mockSearch, MockMemory, MockSynapseEntry, mockExtractor };
 });

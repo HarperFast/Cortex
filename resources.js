@@ -1,16 +1,24 @@
 // Barrel file — re-exports everything from the split resources/ modules
 // so that existing test imports (from '../resources.js') continue to work.
 
-export { generateEmbedding, VALID_CATEGORIES, EMBEDDING_MODEL, log } from './resources/shared.js';
-export { classifyMessage, MemorySearch, MemoryCount, MemoryStore, MemoryTable, VectorSearch, BatchUpsert } from './resources/memory.js';
+export {
+	BatchUpsert,
+	classifyMessage,
+	MemoryCount,
+	MemorySearch,
+	MemoryStore,
+	MemoryTable,
+	VectorSearch,
+} from './resources/memory.js';
+export { EMBEDDING_MODEL, generateEmbedding, log, VALID_CATEGORIES } from './resources/shared.js';
+export { SlackWebhook, verifySlackSignature } from './resources/slack-webhook.js';
 export {
 	classifySynapseEntry,
-	SynapseEntry,
-	SynapseSearch,
-	SynapseIngest,
-	SynapseEmit,
-	SYNAPSE_TYPES,
 	SYNAPSE_SOURCES,
 	SYNAPSE_TARGETS,
+	SYNAPSE_TYPES,
+	SynapseEmit,
+	SynapseEntry,
+	SynapseIngest,
+	SynapseSearch,
 } from './resources/synapse.js';
-export { verifySlackSignature, SlackWebhook } from './resources/slack-webhook.js';

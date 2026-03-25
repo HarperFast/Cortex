@@ -4,8 +4,16 @@ import { beforeEach, describe, it, vi } from 'vitest';
 const { mockMemoryPut, mockSynapseEntryPut, MockMemory, MockSynapseEntry } = vi.hoisted(() => {
 	const mockMemoryPut = vi.fn();
 	const mockSynapseEntryPut = vi.fn();
-	class MockMemory { static put = mockMemoryPut; static search = vi.fn(function*() {}); static get = vi.fn(); }
-	class MockSynapseEntry { static put = mockSynapseEntryPut; static search = vi.fn(function*() {}); static get = vi.fn(); }
+	class MockMemory {
+		static put = mockMemoryPut;
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = mockSynapseEntryPut;
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
 	return { mockMemoryPut, mockSynapseEntryPut, MockMemory, MockSynapseEntry };
 });
 
@@ -126,7 +134,7 @@ describe('BatchUpsert', () => {
 
 	it('handles individual record failures gracefully', async () => {
 		const callCount = { count: 0 };
-		mockMemoryPut.mockImplementation(async (record) => {
+		mockMemoryPut.mockImplementation(async (_record) => {
 			callCount.count++;
 			if (callCount.count === 2) {
 				throw new Error('Database constraint violation');

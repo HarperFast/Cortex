@@ -4,8 +4,16 @@ import { beforeEach, describe, it, vi } from 'vitest';
 const { MockMemory, mockSynapseSearch, MockSynapseEntry, mockExtractor } = vi.hoisted(() => {
 	const mockSynapseSearch = vi.fn(function*() {});
 	const mockExtractor = vi.fn();
-	class MockMemory { static put = vi.fn(); static search = vi.fn(function*() {}); static get = vi.fn(); }
-	class MockSynapseEntry { static put = vi.fn(); static search = mockSynapseSearch; static get = vi.fn(); }
+	class MockMemory {
+		static put = vi.fn();
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = vi.fn();
+		static search = mockSynapseSearch;
+		static get = vi.fn();
+	}
 	return { MockMemory, mockSynapseSearch, MockSynapseEntry, mockExtractor };
 });
 

@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict';
-import { describe, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, it, vi } from 'vitest';
 
 const { mockSearch, MockMemory, MockSynapseEntry, mockExtractor } = vi.hoisted(() => {
 	const mockSearch = vi.fn(function*() {});
-	class MockMemory { static put = vi.fn(); static search = mockSearch; static get = vi.fn(); }
-	class MockSynapseEntry { static put = vi.fn(); static search = vi.fn(function*() {}); static get = vi.fn(); }
+	class MockMemory {
+		static put = vi.fn();
+		static search = mockSearch;
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = vi.fn();
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
 	const mockExtractor = vi.fn();
 	return { mockSearch, MockMemory, MockSynapseEntry, mockExtractor };
 });
@@ -309,10 +317,13 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 		assert.equal(result.count, 2);
 		assert.equal(result.results.length, 2);
 		// MemorySearch normalizes $distance to similarity (1 - distance/2)
-		assert.deepEqual(result.results, fakeResults.map(r => ({
-			...r,
-			similarity: Math.max(0, 1 - (r.$distance || 0) / 2),
-		})));
+		assert.deepEqual(
+			result.results,
+			fakeResults.map(r => ({
+				...r,
+				similarity: Math.max(0, 1 - (r.$distance || 0) / 2),
+			})),
+		);
 	});
 
 	it('applies single indexed filter without wrapping in array', async () => {

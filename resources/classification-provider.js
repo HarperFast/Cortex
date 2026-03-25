@@ -314,7 +314,7 @@ async function classifyWithGoogle(text) {
 					maxOutputTokens: 512,
 				},
 			}),
-		}
+		},
 	);
 
 	if (!response.ok) {
@@ -441,7 +441,7 @@ async function classifyWithLocal(text) {
 	// Action item keywords
 	if (
 		/action item|todo|task|@everyone|assigned|need to|must|should do|need someone to/i.test(
-			lowerText
+			lowerText,
 		)
 	) {
 		return {
@@ -490,7 +490,7 @@ async function classifyWithLocal(text) {
 	// Feedback keywords
 	if (
 		/feedback|suggest|improvement|comment|thoughts|opinion|review|not working|bug|issue/i.test(
-			lowerText
+			lowerText,
 		)
 	) {
 		return {
@@ -529,7 +529,7 @@ function extractLocalEntities(text) {
 		dates: [],
 	};
 
-	if (!text) return entities;
+	if (!text) { return entities; }
 
 	// Extract @mentions
 	const mentions = text.match(/@(\w+)/g) || [];
@@ -540,8 +540,8 @@ function extractLocalEntities(text) {
 	entities.topics = [...new Set(hashtags.map((h) => h.substring(1)))];
 
 	// Simple date patterns (YYYY-MM-DD, MM/DD/YYYY, "tomorrow", "next week", etc.)
-	const datePatterns =
-		text.match(/\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}|tomorrow|today|next week|next month/gi) || [];
+	const datePatterns = text.match(/\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}|tomorrow|today|next week|next month/gi)
+		|| [];
 	entities.dates = [...new Set(datePatterns)];
 
 	return entities;
@@ -642,10 +642,9 @@ export async function classifyMemory(text, options = {}) {
 		};
 
 		// Normalize summary
-		const summary =
-			result.summary && typeof result.summary === 'string'
-				? result.summary.substring(0, 500)
-				: text.substring(0, 100);
+		const summary = result.summary && typeof result.summary === 'string'
+			? result.summary.substring(0, 500)
+			: text.substring(0, 100);
 
 		const normalized = {
 			classification,
@@ -716,7 +715,7 @@ export function validateConfig() {
 	];
 	if (!validProviders.includes(config.provider)) {
 		issues.push(
-			`CLASSIFICATION_PROVIDER "${config.provider}" is invalid. Must be one of: ${validProviders.join(', ')}`
+			`CLASSIFICATION_PROVIDER "${config.provider}" is invalid. Must be one of: ${validProviders.join(', ')}`,
 		);
 	}
 
@@ -727,17 +726,17 @@ export function validateConfig() {
 		}
 
 		if (
-			['anthropic', 'openai', 'google', 'openai-compatible'].includes(config.provider) &&
-			!config.apiKey
+			['anthropic', 'openai', 'google', 'openai-compatible'].includes(config.provider)
+			&& !config.apiKey
 		) {
 			issues.push(
-				`CLASSIFICATION_API_KEY required for ${config.provider} provider`
+				`CLASSIFICATION_API_KEY required for ${config.provider} provider`,
 			);
 		}
 
 		if (['ollama', 'openai-compatible'].includes(config.provider) && !config.baseUrl) {
 			issues.push(
-				`CLASSIFICATION_BASE_URL required for ${config.provider} provider`
+				`CLASSIFICATION_BASE_URL required for ${config.provider} provider`,
 			);
 		}
 	}

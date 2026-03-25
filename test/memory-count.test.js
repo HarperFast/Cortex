@@ -3,7 +3,11 @@ import { describe, it, vi } from 'vitest';
 
 const { mockSearch, MockMemory } = vi.hoisted(() => {
 	const mockSearch = vi.fn(function*() {});
-	class MockMemory { static put = vi.fn(); static search = mockSearch; static get = vi.fn(); }
+	class MockMemory {
+		static put = vi.fn();
+		static search = mockSearch;
+		static get = vi.fn();
+	}
 	return { mockSearch, MockMemory };
 });
 

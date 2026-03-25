@@ -3,12 +3,12 @@ import { Resource, tables } from 'harperdb';
 import { createHash } from 'node:crypto';
 import { classifyMemory } from './classification-provider.js';
 import {
-	EMBEDDING_MODEL,
 	DEFAULT_SEARCH_LIMIT,
-	MAX_SEARCH_LIMIT,
-	VALID_CATEGORIES,
+	EMBEDDING_MODEL,
 	generateEmbedding,
 	log,
+	MAX_SEARCH_LIMIT,
+	VALID_CATEGORIES,
 } from './shared.js';
 
 const { Memory, SynapseEntry } = tables;
@@ -297,11 +297,13 @@ export class MemoryStore extends Resource {
 		const contentHash = createHash('sha256').update(text.trim().toLowerCase()).digest('hex');
 
 		// Fast path: exact content hash match
-		for await (const existing of Memory.search({
-			select: ['id', 'summary', 'rawText'],
-			conditions: { attribute: 'contentHash', comparator: 'equals', value: contentHash },
-			limit: 1,
-		})) {
+		for await (
+			const existing of Memory.search({
+				select: ['id', 'summary', 'rawText'],
+				conditions: { attribute: 'contentHash', comparator: 'equals', value: contentHash },
+				limit: 1,
+			})
+		) {
 			log('info', 'Exact duplicate detected via content hash', { existingId: existing.id });
 			return {
 				stored: false,
@@ -360,9 +362,7 @@ export class MemoryStore extends Resource {
 		}
 
 		// No duplicate found (or dedup disabled), classify and store new memory
-		const [classification] = await Promise.all([
-			classifyMessage(text),
-		]);
+		const classification = await classifyMessage(text);
 
 		const memoryRecord = {
 			rawText: text,

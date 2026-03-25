@@ -5,8 +5,16 @@ const { MockMemory, mockSynapsePut, MockSynapseEntry, mockCreate, mockExtractor 
 	const mockSynapsePut = vi.fn();
 	const mockCreate = vi.fn();
 	const mockExtractor = vi.fn();
-	class MockMemory { static put = vi.fn(); static search = vi.fn(function*() {}); static get = vi.fn(); }
-	class MockSynapseEntry { static put = mockSynapsePut; static search = vi.fn(function*() {}); static get = vi.fn(); }
+	class MockMemory {
+		static put = vi.fn();
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = mockSynapsePut;
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
 	return { MockMemory, mockSynapsePut, MockSynapseEntry, mockCreate, mockExtractor };
 });
 
