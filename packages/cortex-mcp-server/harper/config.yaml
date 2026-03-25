@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=./node_modules/harperdb/config-app.schema.json
+
+# Cortex MCP Server — Harper Deployment
+# Runs the MCP server as a Harper component alongside Cortex itself.
+# The MCP server connects to the local Cortex instance on localhost.
+
+# Load environment variables (.env for ANTHROPIC_API_KEY, etc.)
+loadEnv:
+  files: '.env'
+
+# REST interface for the MCP Streamable HTTP endpoint
+rest: true
+
+# GraphQL schema — reuse Cortex's Memory + SynapseEntry tables
+graphqlSchema:
+  files: 'schema.graphql'
+
+# Resource files — the MCP server resource + Cortex resources
+jsResource:
+  files: 'resources/*.ts'

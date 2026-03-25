@@ -1,0 +1,62 @@
+{
+	"name": "@harper/openclaw-memory",
+	"version": "0.1.0",
+	"description": "Distributed long-term agent memory backed by Harper Cortex. Server-side embeddings, multi-agent sharing, zero API keys required.",
+	"kind": "memory",
+	"entrypoint": "dist/index.js",
+	"repository": "https://github.com/HarperFast/openclaw-memory-harper",
+	"author": "Harper",
+	"license": "MIT",
+	"configuration": {
+		"instanceUrl": {
+			"type": "string",
+			"required": true,
+			"description": "Harper Cortex instance URL (e.g., https://my-instance.harpercloud.com)"
+		},
+		"token": {
+			"type": "string",
+			"required": false,
+			"description": "Optional authentication token for Cortex instance"
+		},
+		"table": {
+			"type": "string",
+			"default": "agent_memory",
+			"description": "Cortex table name for memory storage"
+		},
+		"schema": {
+			"type": "string",
+			"default": "data",
+			"description": "Cortex schema/database name"
+		},
+		"agentId": {
+			"type": "string",
+			"required": false,
+			"description": "Optional agent identifier for multi-agent isolation"
+		},
+		"recallLimit": {
+			"type": "number",
+			"default": 3,
+			"description": "Maximum memories to retrieve during auto-recall"
+		},
+		"recallThreshold": {
+			"type": "number",
+			"default": 0.3,
+			"description": "Minimum similarity score (0-1) for auto-recall injection"
+		},
+		"captureLimit": {
+			"type": "number",
+			"default": 3,
+			"description": "Maximum facts to extract during auto-capture"
+		},
+		"dedupThreshold": {
+			"type": "number",
+			"default": 0.95,
+			"description": "Similarity threshold (0-1) for deduplication"
+		}
+	},
+	"capabilities": {
+		"hooks": ["before_agent_start", "agent_end"],
+		"tools": ["memory_recall", "memory_store", "memory_forget"],
+		"cli": ["memory stats", "memory search"]
+	}
+}

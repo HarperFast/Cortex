@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test:
-    name: Lint & Test
+  ci:
+    name: Lint, Build & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,13 +18,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: Format check
         run: npm run format:check
 
       - name: Lint
         run: npm run lint:check
+
+      - name: Build
+        run: npm run build
 
       - name: Test
         run: npm test

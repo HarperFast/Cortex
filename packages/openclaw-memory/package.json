@@ -1,0 +1,58 @@
+{
+	"name": "@harper/openclaw-memory",
+	"version": "0.1.0",
+	"description": "Distributed long-term agent memory backed by Harper Cortex. Server-side embeddings, multi-agent sharing, zero API keys required.",
+	"type": "module",
+	"engines": {
+		"node": ">=18"
+	},
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"src",
+		"openclaw.plugin.json",
+		"README.md",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:integration": "vitest run tests/integration.test.ts",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist"
+	},
+	"dependencies": {
+		"@harperfast/cortex-client": "^0.1.0",
+		"uuid": "^10.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"@types/uuid": "^10.0.0"
+	},
+	"keywords": [
+		"harper",
+		"openclaw",
+		"memory",
+		"cortex",
+		"agent",
+		"llm",
+		"vector-search",
+		"semantic-memory"
+	],
+	"author": "Harper",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/HarperFast/Cortex.git",
+		"directory": "packages/openclaw-memory"
+	}
+}

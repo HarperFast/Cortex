@@ -12,7 +12,9 @@
 		"useTabs": true
 	},
 	"excludes": [
-		"**/node_modules"
+		"**/node_modules",
+		"**/dist",
+		"packages/cortex-mcp-server/harper/node_modules"
 	],
 	"plugins": [
 		"https://plugins.dprint.dev/typescript-0.95.13.wasm",

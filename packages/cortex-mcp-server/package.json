@@ -1,0 +1,51 @@
+{
+	"name": "@harperfast/cortex-mcp-server",
+	"version": "0.2.0",
+	"description": "Remote MCP server that exposes Harper Cortex memory as tools to Claude, Cursor, Windsurf, and any MCP-compatible client",
+	"type": "module",
+	"main": "./dist/index.js",
+	"bin": {
+		"cortex-mcp-server": "./dist/index.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsx src/index.ts --http",
+		"start": "tsx src/index.ts --http",
+		"test": "vitest run",
+		"test:run": "vitest run",
+		"typecheck": "node --max-old-space-size=8192 ./node_modules/.bin/tsc --noEmit",
+		"clean": "rm -rf dist"
+	},
+	"keywords": [
+		"mcp",
+		"memory",
+		"cortex",
+		"harper",
+		"ai",
+		"agent",
+		"claude",
+		"cursor",
+		"windsurf"
+	],
+	"author": "HarperFast",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/HarperFast/Cortex.git",
+		"directory": "packages/cortex-mcp-server"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.27.0",
+		"zod": "^3.22.4"
+	},
+	"devDependencies": {
+		"@types/node": "^20.10.6",
+		"tsx": "^4.7.0"
+	},
+	"engines": {
+		"node": ">=18.0.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

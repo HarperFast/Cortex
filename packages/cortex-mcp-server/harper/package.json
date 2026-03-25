@@ -1,0 +1,20 @@
+{
+	"name": "@harperfast/cortex-mcp-server-harper",
+	"version": "0.1.0",
+	"description": "Cortex MCP server deployed as a Harper component — runs alongside Cortex on the same instance",
+	"type": "module",
+	"scripts": {
+		"start": "harper run .",
+		"dev": "harper dev .",
+		"deploy": "dotenv -- npm run deploy:component",
+		"deploy:component": "harper deploy_component . restart=rolling replicated=true",
+		"test": "node --experimental-test-module-mocks --test test/*.test.js"
+	},
+	"devDependencies": {
+		"harperdb": "*",
+		"dotenv-cli": "^11.0.0"
+	},
+	"engines": {
+		"node": ">=22.0.0"
+	}
+}

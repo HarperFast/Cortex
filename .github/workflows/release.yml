@@ -24,12 +24,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - run: npm ci
+      - run: npm install
+
+      - name: Build
+        run: npm run build
 
       - name: Test
         run: npm test
 
-      - name: Release
+      - name: Release Cortex
+        working-directory: packages/cortex
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
