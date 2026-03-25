@@ -146,42 +146,42 @@ See [docs/mcp-setup.md](docs/mcp-setup.md) for configuration instructions.
 
 The Memory table stores all ingested content with HNSW vector indexing for semantic search:
 
-| Field            | Type       | Description                                                     |
-| ---------------- | ---------- | --------------------------------------------------------------- |
-| `id`             | ID         | Primary key                                                     |
-| `rawText`        | String     | Original content                                                |
-| `source`         | String     | Origin platform (e.g. `slack`) — indexed                        |
-| `sourceType`     | String     | Content type (e.g. `message`) — indexed                         |
-| `channelId`      | String     | Source channel — indexed                                        |
-| `channelName`    | String     | Human-readable channel name                                     |
-| `authorId`       | String     | Author identifier — indexed                                     |
-| `authorName`     | String     | Human-readable author name                                      |
-| `agentId`        | String     | Namespace for multi-agent isolation — indexed                   |
-| `classification` | String     | AI-assigned category (decision, action_item, etc.) — indexed    |
-| `entities`       | Any        | Extracted entities (people, projects, technologies, topics)     |
-| `embedding`      | [Float]    | 384-dim vector — HNSW indexed (cosine distance)                 |
-| `contentHash`    | String     | SHA-256 hash of normalized text — indexed (exact dedup)         |
-| `supersedes`     | String     | ID of the memory this record replaces (provenance chain)        |
-| `summary`        | String     | AI-generated summary                                            |
-| `timestamp`      | Date       | When the content was created — indexed                          |
-| `threadTs`       | String     | Thread identifier (for threaded conversations)                  |
-| `metadata`       | Any        | Arbitrary metadata                                              |
+| Field            | Type    | Description                                                  |
+| ---------------- | ------- | ------------------------------------------------------------ |
+| `id`             | ID      | Primary key                                                  |
+| `rawText`        | String  | Original content                                             |
+| `source`         | String  | Origin platform (e.g. `slack`) — indexed                     |
+| `sourceType`     | String  | Content type (e.g. `message`) — indexed                      |
+| `channelId`      | String  | Source channel — indexed                                     |
+| `channelName`    | String  | Human-readable channel name                                  |
+| `authorId`       | String  | Author identifier — indexed                                  |
+| `authorName`     | String  | Human-readable author name                                   |
+| `agentId`        | String  | Namespace for multi-agent isolation — indexed                |
+| `classification` | String  | AI-assigned category (decision, action_item, etc.) — indexed |
+| `entities`       | Any     | Extracted entities (people, projects, technologies, topics)  |
+| `embedding`      | [Float] | 384-dim vector — HNSW indexed (cosine distance)              |
+| `contentHash`    | String  | SHA-256 hash of normalized text — indexed (exact dedup)      |
+| `supersedes`     | String  | ID of the memory this record replaces (provenance chain)     |
+| `summary`        | String  | AI-generated summary                                         |
+| `timestamp`      | Date    | When the content was created — indexed                       |
+| `threadTs`       | String  | Thread identifier (for threaded conversations)               |
+| `metadata`       | Any     | Arbitrary metadata                                           |
 
 ## API Endpoints
 
 ### Memory Endpoints
 
-| Endpoint          | Method | Description                                                                  |
-| ----------------- | ------ | ---------------------------------------------------------------------------- |
-| `/SlackWebhook`   | POST   | Receives Slack Events API payloads. Classifies, embeds, and stores messages. |
-| `/MemorySearch`   | POST   | Semantic search with attribute filters and score normalization (0-1)         |
-| `/VectorSearch`   | POST   | Search with a pre-computed embedding vector (for LangChain / server-to-server) |
-| `/BatchUpsert`    | POST   | Insert or update multiple memory records in a single request                 |
-| `/MemoryStore`    | POST   | Dedup-aware storage: SHA-256 hash + vector similarity dedup before insert    |
-| `/MemoryCount`    | POST   | Count memories with optional filters (source, classification, agentId, etc.) |
-| `/Memory/`        | GET    | List all memories (with pagination)                                          |
-| `/Memory/{id}`    | GET    | Get a single memory by ID                                                    |
-| `/Memory/{id}`    | DELETE | Delete a memory by ID                                                        |
+| Endpoint        | Method | Description                                                                    |
+| --------------- | ------ | ------------------------------------------------------------------------------ |
+| `/SlackWebhook` | POST   | Receives Slack Events API payloads. Classifies, embeds, and stores messages.   |
+| `/MemorySearch` | POST   | Semantic search with attribute filters and score normalization (0-1)           |
+| `/VectorSearch` | POST   | Search with a pre-computed embedding vector (for LangChain / server-to-server) |
+| `/BatchUpsert`  | POST   | Insert or update multiple memory records in a single request                   |
+| `/MemoryStore`  | POST   | Dedup-aware storage: SHA-256 hash + vector similarity dedup before insert      |
+| `/MemoryCount`  | POST   | Count memories with optional filters (source, classification, agentId, etc.)   |
+| `/Memory/`      | GET    | List all memories (with pagination)                                            |
+| `/Memory/{id}`  | GET    | Get a single memory by ID                                                      |
+| `/Memory/{id}`  | DELETE | Delete a memory by ID                                                          |
 
 ### MemorySearch Request
 
@@ -427,12 +427,12 @@ See [docs/synapse-design.md](docs/synapse-design.md) for full architecture detai
 
 Official packages for integrating with Cortex from your applications:
 
-| Package | Description | Repo |
-| ------- | ----------- | ---- |
-| **@harperfast/cortex-client** | Lightweight HTTP-only TypeScript client. Zero dependencies, dual ESM/CJS. Flair-style namespaced API (`client.memory.search`, `client.synapse.ingest`, etc.) | [HarperFast/cortex-client](https://github.com/HarperFast/cortex-client) |
-| **@langchain/harper** | LangChain.js VectorStore and Retriever backed by Cortex. Drop-in integration for any LangChain RAG pipeline. | [HarperFast/langchain-harper](https://github.com/HarperFast/langchain-harper) |
-| **@harper/openclaw-memory** | OpenClaw/NemoClaw memory plugin. Auto-recall and auto-capture lifecycle hooks, remember/recall/forget/count agent tools. | [HarperFast/openclaw-memory](https://github.com/HarperFast/openclaw-memory) |
-| **@harperfast/cortex-mcp-server** | Remote MCP server exposing Cortex to Claude, Cursor, Windsurf. 7 standard tools + 6 admin tools. Standalone or Harper deployment modes. | [HarperFast/cortex-mcp-server](https://github.com/HarperFast/cortex-mcp-server) |
+| Package                           | Description                                                                                                                                                  | Repo                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **@harperfast/cortex-client**     | Lightweight HTTP-only TypeScript client. Zero dependencies, dual ESM/CJS. Flair-style namespaced API (`client.memory.search`, `client.synapse.ingest`, etc.) | [HarperFast/cortex-client](https://github.com/HarperFast/cortex-client)         |
+| **@langchain/harper**             | LangChain.js VectorStore and Retriever backed by Cortex. Drop-in integration for any LangChain RAG pipeline.                                                 | [HarperFast/langchain-harper](https://github.com/HarperFast/langchain-harper)   |
+| **@harper/openclaw-memory**       | OpenClaw/NemoClaw memory plugin. Auto-recall and auto-capture lifecycle hooks, remember/recall/forget/count agent tools.                                     | [HarperFast/openclaw-memory](https://github.com/HarperFast/openclaw-memory)     |
+| **@harperfast/cortex-mcp-server** | Remote MCP server exposing Cortex to Claude, Cursor, Windsurf. 7 standard tools + 6 admin tools. Standalone or Harper deployment modes.                      | [HarperFast/cortex-mcp-server](https://github.com/HarperFast/cortex-mcp-server) |
 
 ## Agent Skills
 

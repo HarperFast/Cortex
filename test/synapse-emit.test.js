@@ -1,40 +1,37 @@
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it, mock } from 'node:test';
+import { beforeEach, describe, it, vi } from 'vitest';
 
-class MockMemory {
-	static put = mock.fn();
-	static search = mock.fn(function*() {});
-	static get = mock.fn();
-}
-
-const mockSynapseSearch = mock.fn(function*() {});
-
-class MockSynapseEntry {
-	static put = mock.fn();
-	static search = mockSynapseSearch;
-	static get = mock.fn();
-}
-
-mock.module('harperdb', {
-	namedExports: {
-		Resource: class Resource {},
-		tables: { Memory: MockMemory, SynapseEntry: MockSynapseEntry },
-	},
+const { MockMemory, mockSynapseSearch, MockSynapseEntry } = vi.hoisted(() => {
+	const mockSynapseSearch = vi.fn(function*() {});
+	class MockMemory {
+		static put = vi.fn();
+		static search = vi.fn(function*() {});
+		static get = vi.fn();
+	}
+	class MockSynapseEntry {
+		static put = vi.fn();
+		static search = mockSynapseSearch;
+		static get = vi.fn();
+	}
+	return { MockMemory, mockSynapseSearch, MockSynapseEntry };
 });
 
-mock.module('@anthropic-ai/sdk', {
-	defaultExport: class Anthropic {
+vi.mock('harperdb', () => ({
+	Resource: class Resource {},
+	tables: { Memory: MockMemory, SynapseEntry: MockSynapseEntry },
+}));
+
+vi.mock('@anthropic-ai/sdk', () => ({
+	default: class Anthropic {
 		constructor() {
-			this.messages = { create: mock.fn() };
+			this.messages = { create: vi.fn() };
 		}
 	},
-});
+}));
 
-mock.module('@xenova/transformers', {
-	namedExports: {
-		pipeline: mock.fn(async () => async () => ({ data: new Float32Array(384).fill(0.1) })),
-	},
-});
+vi.mock('@xenova/transformers', () => ({
+	pipeline: vi.fn(async () => async () => ({ data: new Float32Array(384).fill(0.1) })),
+}));
 
 process.env.ANTHROPIC_API_KEY = 'test-key';
 
@@ -47,7 +44,7 @@ const fakeEntries = [
 
 describe('SynapseEmit', () => {
 	beforeEach(() => {
-		mockSynapseSearch.mock.resetCalls();
+		mockSynapseSearch.mockClear();
 	});
 
 	it('returns error for missing target', async () => {
@@ -74,7 +71,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('accepts markdown as an emit target', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {});
+		mockSynapseSearch.mockImplementation(function*() {});
 
 		const emit = new SynapseEmit();
 		const result = await emit.post({ target: 'markdown', projectId: 'proj-1' });
@@ -100,7 +97,7 @@ describe('SynapseEmit', () => {
 
 	it('queries only active entries for the project', async () => {
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function*(params) {
+		mockSynapseSearch.mockImplementation(function*(params) {
 			capturedParams = params;
 		});
 
@@ -117,7 +114,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits claude_code format as markdown string', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {
+		mockSynapseSearch.mockImplementation(function*() {
 			for (const e of fakeEntries) { yield e; }
 		});
 
@@ -132,7 +129,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits cursor format as object with .mdc files', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {
+		mockSynapseSearch.mockImplementation(function*() {
 			for (const e of fakeEntries) { yield e; }
 		});
 
@@ -147,7 +144,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('emits windsurf format as object with .md files', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {
+		mockSynapseSearch.mockImplementation(function*() {
 			for (const e of fakeEntries) { yield e; }
 		});
 
@@ -162,7 +159,7 @@ describe('SynapseEmit', () => {
 
 	it('pushes single-type filter to search conditions', async () => {
 		let capturedParams;
-		mockSynapseSearch.mock.mockImplementation(function*(params) {
+		mockSynapseSearch.mockImplementation(function*(params) {
 			capturedParams = params;
 			for (const e of fakeEntries.filter(e => e.type === 'intent')) { yield e; }
 		});
@@ -177,7 +174,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('post-filters when multiple types provided', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {
+		mockSynapseSearch.mockImplementation(function*() {
 			for (const e of fakeEntries) { yield e; }
 		});
 
@@ -188,7 +185,7 @@ describe('SynapseEmit', () => {
 	});
 
 	it('returns entryCount of 0 when no entries exist', async () => {
-		mockSynapseSearch.mock.mockImplementation(function*() {});
+		mockSynapseSearch.mockImplementation(function*() {});
 
 		const emit = new SynapseEmit();
 		const result = await emit.post({ target: 'claude_code', projectId: 'empty-project' });
