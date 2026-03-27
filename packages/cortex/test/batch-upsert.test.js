@@ -31,7 +31,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }));
 
 const { mockExtractor } = vi.hoisted(() => ({ mockExtractor: vi.fn() }));
-vi.mock('@xenova/transformers', () => ({
+vi.mock('@huggingface/transformers', () => ({
 	pipeline: vi.fn(async () => mockExtractor),
 }));
 
