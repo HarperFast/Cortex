@@ -25,7 +25,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 	},
 }));
 
-vi.mock('@xenova/transformers', () => ({
+vi.mock('@huggingface/transformers', () => ({
 	pipeline: vi.fn(async () => mockExtractor),
 }));
 

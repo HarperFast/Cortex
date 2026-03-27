@@ -1,10 +1,10 @@
-import { pipeline } from '@xenova/transformers';
+import { pipeline } from '@huggingface/transformers';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-export const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';
+export const EMBEDDING_MODEL = 'sentence-transformers/all-MiniLM-L6-v2';
 export const DEFAULT_SEARCH_LIMIT = 10;
 export const MAX_SEARCH_LIMIT = 100;
 
