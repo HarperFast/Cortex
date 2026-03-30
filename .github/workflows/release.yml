@@ -45,4 +45,4 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npx multi-semantic-release
+        run: npx multi-semantic-release --sequential-init --deps.bump=satisfy
