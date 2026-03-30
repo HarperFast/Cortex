@@ -29,7 +29,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 	},
 }));
 
-vi.mock('@xenova/transformers', () => ({
+vi.mock('@huggingface/transformers', () => ({
 	pipeline: vi.fn(async () => async () => ({ data: new Float32Array(384).fill(0.1) })),
 }));
 
