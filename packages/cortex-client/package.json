@@ -1,6 +1,6 @@
 {
 	"name": "@harperfast/cortex-client",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Lightweight HTTP-only TypeScript client for Harper Cortex — no runtime, no embeddings, just fetch + auth",
 	"type": "module",
 	"exports": {
