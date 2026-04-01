@@ -1,0 +1,133 @@
+# Cortex — Windsurf Rules
+
+You are working in the Cortex monorepo: the memory layer for AI agents, built on Harper Fabric.
+
+## Project Structure
+
+npm workspaces monorepo with 4 packages:
+
+- `packages/cortex/` — Harper Fabric app (JavaScript). Memory + Synapse tables, classification, embeddings, REST endpoints.
+- `packages/cortex-client/` — TypeScript HTTP SDK for Cortex.
+- `packages/openclaw-memory/` — TypeScript OpenClaw plugin. Auto-recall/capture lifecycle hooks.
+- `packages/cortex-mcp-server/` — TypeScript MCP server. Bridges AI agents to Cortex with auth, safety, rate limiting.
+
+## Code Style (strictly enforced)
+
+- ES modules only (import/export, never require/module.exports)
+- Tabs for indentation (not spaces)
+- Single quotes (not double)
+- Always use braces for if/else/for/while
+- Formatting enforced by dprint — run `npm run format:fix` after changes
+- Linting enforced by oxlint — run `npm run lint:fix` after changes
+
+## Harper Fabric Patterns
+
+### Schema (packages/cortex/schema.graphql)
+
+Tables use GraphQL directives:
+
+- `@table` — declares a table
+- `@export` — generates automatic REST/WebSocket APIs. Do NOT use on tables extended in resources.js.
+- `@primaryKey` — primary key
+- `@indexed` — standard index
+- `@indexed(type: "HNSW")` — vector index for similarity search (cosine distance)
+- `@relationship(from:)` / `@relationship(to:)` — table relationships
+
+### Resource Classes (packages/cortex/resources/)
+
+Two patterns:
+
+1. **Table extension** — class extends `tables.TableName`, overrides HTTP methods, calls `super` for defaults:
+
+```javascript
+import { tables } from 'harperdb';
+class MemoryTable extends tables.Memory {
+	async post(data) {/* custom logic + super.post() */}
+}
+```
+
+Tables extended this way must NOT have `@export` in the schema.
+
+2. **Custom resource** — class extends `Resource`, class name = URL path:
+
+```javascript
+import { Resource } from 'harperdb';
+class MemorySearch extends Resource {
+	async post(data) {
+		return { results };
+	}
+}
+```
+
+### Vector Search
+
+```javascript
+for await (
+	const result of Table.search({
+		sort: { attribute: 'embedding', value: queryVector, algorithm: 'HNSW' },
+		conditions: [{
+			attribute: 'embedding',
+			comparator: 'lt',
+			value: threshold,
+		}],
+		limit: topK,
+	})
+) { /* ranked by similarity */ }
+```
+
+### Important Constraints
+
+- Harper Resource `post()` receives only parsed JSON body — no HTTP headers are accessible
+- Use body-level tokens for webhook authentication (see slack-webhook.js)
+- Harper Resources always return HTTP 200 — status codes in response body are application-level metadata
+- Embeddings are 384-dimensional (all-MiniLM-L6-v2, ONNX, runs locally)
+- Classification is provider-agnostic (Anthropic, OpenAI, Google, Ollama, or local keyword fallback)
+
+### Config (packages/cortex/config.yaml)
+
+```yaml
+loadEnv:
+  files: '.env'
+rest: true
+graphqlSchema:
+  files: 'schema.graphql'
+jsResource:
+  files: 'resources.js'
+  resources: '*'
+```
+
+## Memory Write Pipeline
+
+All ingestion follows: receive -> classify -> embed -> store
+
+1. Validate/authenticate the incoming payload
+2. `classifyMessage(text)` -> `{ category, entities, summary }`
+3. `generateEmbedding(text)` -> 384-dim Float32Array
+4. `Memory.put(record)` -> stored with HNSW vector index
+
+## Key Commands
+
+```bash
+npm test                  # All tests (vitest)
+npm run build             # Build TypeScript packages
+npm run format:check      # Check formatting (dprint)
+npm run format:fix        # Fix formatting
+npm run lint:check        # Lint (oxlint)
+npm run dev -w packages/cortex              # Dev server on :9926
+npm run deploy -w packages/cortex           # Deploy to Fabric
+```
+
+## Extension Points
+
+- New ingestion source: add Resource class in `packages/cortex/resources/`, export from `resources.js`
+- New classification provider: add in `resources/classification-provider.js`
+- New embedding model: swap in `resources/shared.js` (update schema dimensions)
+- New MCP tools: add in `packages/cortex-mcp-server/src/tools/`
+- New client API methods: extend `packages/cortex-client/src/`
+- Schema changes: edit `schema.graphql`, no `@export` on extended tables
+
+## Testing
+
+Vitest in workspace mode. Tests live alongside source in each package's `test/` directory.
+Mock `harperdb` module in tests (Resource base class, tables object).
+Run `npm test` from root to execute all packages.
