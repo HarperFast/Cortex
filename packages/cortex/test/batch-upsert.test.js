@@ -21,6 +21,7 @@ const { mockMemoryPut, mockSynapseEntryPut, MockMemory, MockSynapseEntry, mockTr
 vi.mock('harper', () => ({
 	Resource: class Resource {},
 	tables: { Memory: MockMemory, SynapseEntry: MockSynapseEntry },
+	transaction: mockTransaction,
 	default: { transaction: mockTransaction },
 }));
 

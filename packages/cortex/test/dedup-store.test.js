@@ -16,6 +16,7 @@ const { mockSearch, MockMemory, mockClassifyResult, mockExtractor } = vi.hoisted
 vi.mock('harper', () => ({
 	Resource: class Resource {},
 	tables: { Memory: MockMemory, SynapseEntry: class {} },
+	transaction: async (cb) => cb(),
 	default: { transaction: async (cb) => cb() },
 }));
 

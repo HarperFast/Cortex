@@ -1,4 +1,4 @@
-import harper, { Resource, tables } from 'harper';
+import { Resource, tables, transaction } from 'harper';
 import { createHash, randomUUID } from 'node:crypto';
 import { classifyMemory } from './classification-provider.js';
 import {
@@ -10,7 +10,6 @@ import {
 	VALID_CATEGORIES,
 } from './shared.js';
 
-const { transaction } = harper;
 
 const { Memory, SynapseEntry } = tables;
 
