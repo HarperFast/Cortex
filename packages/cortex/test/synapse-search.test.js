@@ -47,31 +47,27 @@ describe('SynapseSearch', () => {
 	});
 
 	it('returns error for missing query', async () => {
-		const search = new SynapseSearch();
-		const result = await search.post({ projectId: 'proj-1' });
+		const result = await SynapseSearch.post(null, { projectId: 'proj-1' });
 
 		assert.ok(result.error);
 		assert.ok(result.error.includes('query is required'));
 	});
 
 	it('returns error for empty string query', async () => {
-		const search = new SynapseSearch();
-		const result = await search.post({ query: '', projectId: 'proj-1' });
+		const result = await SynapseSearch.post(null, { query: '', projectId: 'proj-1' });
 
 		assert.ok(result.error);
 	});
 
 	it('returns error for missing projectId', async () => {
-		const search = new SynapseSearch();
-		const result = await search.post({ query: 'architecture decision' });
+		const result = await SynapseSearch.post(null, { query: 'architecture decision' });
 
 		assert.ok(result.error);
 		assert.ok(result.error.includes('projectId is required'));
 	});
 
 	it('returns error for null data', async () => {
-		const search = new SynapseSearch();
-		const result = await search.post(null);
+		const result = await SynapseSearch.post(null, null);
 
 		assert.ok(result.error);
 	});
@@ -93,8 +89,7 @@ describe('SynapseSearch', () => {
 			yield fakeResult;
 		});
 
-		const search = new SynapseSearch();
-		const result = await search.post({ query: 'architecture decision', projectId: 'my-project' });
+		const result = await SynapseSearch.post(null, { query: 'architecture decision', projectId: 'my-project' });
 
 		assert.ok(result.results);
 		assert.equal(result.count, 1);
@@ -112,8 +107,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'my-project' });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'my-project' });
 
 		assert.ok(Array.isArray(capturedParams.conditions));
 		const projectCondition = capturedParams.conditions.find(c => c.attribute === 'projectId');
@@ -134,8 +128,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'proj-1', limit: 5 });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'proj-1', limit: 5 });
 
 		assert.equal(capturedParams.limit, 5);
 	});
@@ -150,8 +143,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'proj-1', limit: 500 });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'proj-1', limit: 500 });
 
 		assert.equal(capturedParams.limit, 100);
 	});
@@ -166,8 +158,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'proj-1', filters: { type: 'constraint' } });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'proj-1', filters: { type: 'constraint' } });
 
 		const typeCondition = capturedParams.conditions.find(c => c.attribute === 'type');
 		assert.ok(typeCondition);
@@ -184,8 +175,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'proj-1', filters: { type: 'invalid_type' } });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'proj-1', filters: { type: 'invalid_type' } });
 
 		const typeCondition = capturedParams.conditions.find(c => c.attribute === 'type');
 		assert.ok(!typeCondition);
@@ -201,8 +191,7 @@ describe('SynapseSearch', () => {
 			capturedParams = params;
 		});
 
-		const search = new SynapseSearch();
-		await search.post({ query: 'test', projectId: 'proj-1', filters: { source: 'cursor' } });
+		await SynapseSearch.post(null, { query: 'test', projectId: 'proj-1', filters: { source: 'cursor' } });
 
 		const sourceCondition = capturedParams.conditions.find(c => c.attribute === 'source');
 		assert.ok(sourceCondition);

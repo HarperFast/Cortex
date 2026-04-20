@@ -389,7 +389,7 @@ export class SynapseEntry extends SynapseEntryBase {
 // ---------------------------------------------------------------------------
 
 export class SynapseSearch extends Resource {
-	async post(data) {
+	static async post(_req, data) {
 		const { query, projectId, limit, filters } = data || {};
 
 		if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -464,7 +464,7 @@ export class SynapseSearch extends Resource {
 // ---------------------------------------------------------------------------
 
 export class SynapseIngest extends Resource {
-	async post(data) {
+	static async post(_req, data) {
 		const { source, content, projectId, parentId, references } = data || {};
 
 		if (!content || typeof content !== 'string' || content.trim().length === 0) {
@@ -479,7 +479,7 @@ export class SynapseIngest extends Resource {
 
 		log('info', 'Synapse ingest requested', { source, projectId });
 
-		const entries = this._parseContent(source, content);
+		const entries = SynapseIngest._parseContent(source, content);
 		const stored = [];
 
 		for (const entry of entries) {
@@ -526,7 +526,7 @@ export class SynapseIngest extends Resource {
 		return { stored, count: stored.length };
 	}
 
-	_parseContent(source, content) {
+	static _parseContent(source, content) {
 		switch (source) {
 			case 'claude_code':
 				return synapseparsers.parseClaudeCode(content);
@@ -547,7 +547,7 @@ export class SynapseIngest extends Resource {
 // ---------------------------------------------------------------------------
 
 export class SynapseEmit extends Resource {
-	async post(data) {
+	static async post(_req, data) {
 		const { target, projectId, types, limit } = data || {};
 
 		if (!target || !SYNAPSE_TARGETS.has(target)) {
@@ -600,11 +600,11 @@ export class SynapseEmit extends Resource {
 			}
 		}
 
-		const output = this._emitForTarget(target, entries, projectId);
+		const output = SynapseEmit._emitForTarget(target, entries, projectId);
 		return { target, projectId, entryCount: entries.length, output };
 	}
 
-	_emitForTarget(target, entries, projectId) {
+	static _emitForTarget(target, entries, projectId) {
 		switch (target) {
 			case 'claude_code':
 				return synapseEmitters.emitClaudeCode(entries, projectId);

@@ -155,7 +155,6 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new SynapseSearch();
 			const result = await MemorySearch.post(null, {
 				query: 'architecture',
 				projectId: 'proj-1',
@@ -184,7 +183,6 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new SynapseSearch();
 			const result = await MemorySearch.post(null, {
 				query: 'architecture',
 				projectId: 'proj-1',

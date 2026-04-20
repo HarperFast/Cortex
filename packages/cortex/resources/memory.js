@@ -130,7 +130,7 @@ function createFallbackClassification(text) {
 // ---------------------------------------------------------------------------
 
 export class MemorySearch extends Resource {
-	static async post(target, data) {
+	static async post(_req, data) {
 		const { query, limit, filters } = data || {};
 
 		if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -222,7 +222,7 @@ export class MemorySearch extends Resource {
 // ---------------------------------------------------------------------------
 
 export class MemoryCount extends Resource {
-	static async post(target, data) {
+	static async post(_req, data) {
 		const { filters } = data || {};
 
 		if (process.env.REQUIRE_AGENT_NAMESPACE === 'true' && !filters?.agentId) {
@@ -276,7 +276,7 @@ export class MemoryCount extends Resource {
 // ---------------------------------------------------------------------------
 
 export class MemoryStore extends Resource {
-	static async post(target, data) {
+	static async post(_req, data) {
 		const { text, dedupThreshold, agentId, channelId, authorId, sourceType, threadTs, supersedes } = data || {};
 
 		if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -430,7 +430,7 @@ export class MemoryTable extends Memory {
 // ---------------------------------------------------------------------------
 
 export class VectorSearch extends Resource {
-	static async post(target, data) {
+	static async post(_req, data) {
 		const { vector, limit, filter } = data || {};
 
 		if (!vector) {
@@ -487,7 +487,7 @@ export class VectorSearch extends Resource {
 const BATCH_ALLOWED_TABLES = { Memory, SynapseEntry };
 
 export class BatchUpsert extends Resource {
-	static async post(target, data) {
+	static async post(_req, data) {
 		const { table, records } = data || {};
 
 		if (!table) {
