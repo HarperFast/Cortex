@@ -10,7 +10,6 @@ import {
 	VALID_CATEGORIES,
 } from './shared.js';
 
-
 const { Memory, SynapseEntry } = tables;
 
 // Legacy Anthropic classification (used when CLASSIFICATION_PROVIDER is unset)
@@ -131,7 +130,7 @@ function createFallbackClassification(text) {
 // ---------------------------------------------------------------------------
 
 export class MemorySearch extends Resource {
-	async post(data) {
+	static async post(target, data) {
 		const { query, limit, filters } = data || {};
 
 		if (!query || typeof query !== 'string' || query.trim().length === 0) {
@@ -223,7 +222,7 @@ export class MemorySearch extends Resource {
 // ---------------------------------------------------------------------------
 
 export class MemoryCount extends Resource {
-	async post(data) {
+	static async post(target, data) {
 		const { filters } = data || {};
 
 		if (process.env.REQUIRE_AGENT_NAMESPACE === 'true' && !filters?.agentId) {
@@ -277,7 +276,7 @@ export class MemoryCount extends Resource {
 // ---------------------------------------------------------------------------
 
 export class MemoryStore extends Resource {
-	async post(data) {
+	static async post(target, data) {
 		const { text, dedupThreshold, agentId, channelId, authorId, sourceType, threadTs, supersedes } = data || {};
 
 		if (!text || typeof text !== 'string' || text.trim().length === 0) {
@@ -431,7 +430,7 @@ export class MemoryTable extends Memory {
 // ---------------------------------------------------------------------------
 
 export class VectorSearch extends Resource {
-	async post(data) {
+	static async post(target, data) {
 		const { vector, limit, filter } = data || {};
 
 		if (!vector) {

@@ -46,8 +46,7 @@ describe('MemorySearch with agentId', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { agentId: 'agent-123' },
 		});
@@ -67,8 +66,7 @@ describe('MemorySearch with agentId', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { agentId: 'agent-123', classification: 'decision' },
 		});
@@ -90,8 +88,7 @@ describe('MemorySearch with agentId', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { classification: 'knowledge' },
 		});

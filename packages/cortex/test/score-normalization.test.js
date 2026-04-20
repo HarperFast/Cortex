@@ -56,8 +56,7 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new MemorySearch();
-			const result = await search.post({ query: 'test' });
+			const result = await MemorySearch.post(null, { query: 'test' });
 
 			assert.equal(result.results[0].similarity, 1);
 		});
@@ -76,8 +75,7 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new MemorySearch();
-			const result = await search.post({ query: 'test' });
+			const result = await MemorySearch.post(null, { query: 'test' });
 
 			assert.equal(result.results[0].similarity, 0.5);
 		});
@@ -96,8 +94,7 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new MemorySearch();
-			const result = await search.post({ query: 'test' });
+			const result = await MemorySearch.post(null, { query: 'test' });
 
 			assert.equal(result.results[0].similarity, 0);
 		});
@@ -116,8 +113,7 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new MemorySearch();
-			const result = await search.post({ query: 'test' });
+			const result = await MemorySearch.post(null, { query: 'test' });
 
 			assert.equal(result.results[0].similarity, 0);
 		});
@@ -136,8 +132,7 @@ describe('Score Normalization', () => {
 				};
 			});
 
-			const search = new MemorySearch();
-			const result = await search.post({ query: 'test' });
+			const result = await MemorySearch.post(null, { query: 'test' });
 
 			assert.ok(result.results[0].$distance !== undefined);
 			assert.ok(result.results[0].similarity !== undefined);
@@ -161,7 +156,7 @@ describe('Score Normalization', () => {
 			});
 
 			const search = new SynapseSearch();
-			const result = await search.post({
+			const result = await MemorySearch.post(null, {
 				query: 'architecture',
 				projectId: 'proj-1',
 			});
@@ -190,7 +185,7 @@ describe('Score Normalization', () => {
 			});
 
 			const search = new SynapseSearch();
-			const result = await search.post({
+			const result = await MemorySearch.post(null, {
 				query: 'architecture',
 				projectId: 'proj-1',
 			});

@@ -42,24 +42,21 @@ const { VectorSearch } = await import('../resources.js');
 
 describe('VectorSearch', () => {
 	it('returns error for missing vector', async () => {
-		const search = new VectorSearch();
-		const result = await search.post({});
+		const result = await VectorSearch.post(null, {});
 
 		assert.ok(result.error);
 		assert.ok(result.error.includes('vector is required'));
 	});
 
 	it('returns error for non-array vector', async () => {
-		const search = new VectorSearch();
-		const result = await search.post({ vector: 'not-an-array' });
+		const result = await VectorSearch.post(null, { vector: 'not-an-array' });
 
 		assert.ok(result.error);
 		assert.ok(result.error.includes('array'));
 	});
 
 	it('returns error for vector with non-numeric values', async () => {
-		const search = new VectorSearch();
-		const result = await search.post({ vector: [0.1, 'not-a-number', 0.3] });
+		const result = await VectorSearch.post(null, { vector: [0.1, 'not-a-number', 0.3] });
 
 		assert.ok(result.error);
 		assert.ok(result.error.includes('numeric'));
@@ -79,8 +76,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		const result = await search.post({ vector: testVector });
+		const result = await VectorSearch.post(null, { vector: testVector });
 
 		assert.ok(result.results);
 		assert.equal(result.count, 1);
@@ -95,8 +91,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		await search.post({ vector: testVector, limit: 7 });
+		await VectorSearch.post(null, { vector: testVector, limit: 7 });
 
 		assert.equal(capturedParams.limit, 7);
 	});
@@ -108,8 +103,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		await search.post({ vector: testVector, limit: 500 });
+		await VectorSearch.post(null, { vector: testVector, limit: 500 });
 
 		assert.equal(capturedParams.limit, 100);
 	});
@@ -121,8 +115,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.25);
-		const search = new VectorSearch();
-		await search.post({ vector: testVector });
+		await VectorSearch.post(null, { vector: testVector });
 
 		assert.deepEqual(capturedParams.sort.target, testVector);
 		assert.equal(capturedParams.sort.attribute, 'embedding');
@@ -135,8 +128,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		await search.post({
+		await VectorSearch.post(null, {
 			vector: testVector,
 			filter: { classification: 'action_item' },
 		});
@@ -153,8 +145,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		await search.post({
+		await VectorSearch.post(null, {
 			vector: testVector,
 			filter: { source: 'slack', channelId: 'C1234' },
 		});
@@ -170,8 +161,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		await search.post({ vector: testVector, limit: 'invalid' });
+		await VectorSearch.post(null, { vector: testVector, limit: 'invalid' });
 
 		assert.equal(capturedParams.limit, 10);
 	});
@@ -202,8 +192,7 @@ describe('VectorSearch', () => {
 		});
 
 		const testVector = Array(384).fill(0.5);
-		const search = new VectorSearch();
-		const result = await search.post({ vector: testVector });
+		const result = await VectorSearch.post(null, { vector: testVector });
 
 		assert.equal(result.count, 3);
 		assert.equal(result.results.length, 3);

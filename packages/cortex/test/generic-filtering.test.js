@@ -55,8 +55,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { source: 'slack' },
 		});
@@ -77,8 +76,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { sourceType: 'thread_reply' },
 		});
@@ -98,8 +96,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { classification: 'decision' },
 		});
@@ -119,8 +116,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { channelId: 'C123456' },
 		});
@@ -140,8 +136,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { authorId: 'U123456' },
 		});
@@ -161,8 +156,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {
 				source: 'slack',
@@ -189,8 +183,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {
 				source: 'slack',
@@ -214,8 +207,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {
 				source: 'slack',
@@ -242,8 +234,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {
 				source: 'slack',
@@ -266,8 +257,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {},
 		});
@@ -306,8 +296,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			}
 		});
 
-		const search = new MemorySearch();
-		const result = await search.post({
+		const result = await MemorySearch.post(null, {
 			query: 'what action items',
 			filters: {
 				source: 'slack',
@@ -338,8 +327,7 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: { source: 'slack' },
 		});
@@ -359,9 +347,8 @@ describe('MemorySearch - Generic Metadata Filtering', () => {
 			capturedParams = params;
 		});
 
-		const search = new MemorySearch();
 		// Simulate old-style usage with only known fields
-		await search.post({
+		await MemorySearch.post(null, {
 			query: 'test',
 			filters: {
 				source: 'slack',
